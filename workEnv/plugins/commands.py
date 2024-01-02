@@ -112,7 +112,7 @@ async def handle_commands(client, msg):
         chat_id = msg.chat.id
         await client.edit_message_text(chat_id=chat_id, message_id=msg.id,
                                        text="Dammi un attimo e ti scrivo subito.")
-        task = asyncio.create_task(offline(client, 5, "comando -1"))
+        _ = asyncio.create_task(offline(client, 5, "comando -1"))
         if msg.chat.type != Ct.PRIVATE:
             return
         from .greetings import check_chat_for_reply_waiting as ccfrw, non_risposto as nr, lock_rw
@@ -121,7 +121,6 @@ async def handle_commands(client, msg):
         with lock_rw:
             open('reply_waiting.txt', 'a').write(f"{chat_id};1\n")
         await nr(client, chat_id)
-        # await task
 
     elif cmd_txt in ["r", "remove"]:
         c_id = msg.chat.id
