@@ -6,8 +6,13 @@ from pyrogram import Client
 # import time
 '''
 
-t_id = "api id"
-t_hash = "api hash"
+# crea accanto a main.py il file clientParameter.py con dentro queste tre variabili, io l'ho messo in .gitignore
+from clientParameter import t_id, t_hash, t_phone
+'''
+t_id = "id numerico"
+t_hash = "hash alfanumerico"
+t_phone = "numero di telefono"
+'''
 
 plugins = dict(root="plugins")
 
@@ -16,7 +21,7 @@ terminal_id = -1001995530063  # update to supergroup
 
 open("reply_waiting.txt", 'w').truncate()
 
-app = Client("my_account", api_id=t_id, api_hash=t_hash, plugins=plugins)
+app = Client("my_account", api_id=t_id, api_hash=t_hash, phone_number=t_phone, plugins=plugins)
 # app = Client("my_account", api_id=t_id, api_hash=t_hash)
 
 '''
@@ -38,5 +43,9 @@ with app:
     app.send_message(chat_id=terminal_id, text="Ready")
     print("READY")
 
-
-app.run()
+try:
+    app.run()
+finally:
+    app.start()
+    app.send_message(chat_id=terminal_id, text="Stop")
+    app.stop()

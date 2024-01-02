@@ -2,3 +2,5 @@
 *.pyc
 *.session-journal
 *.session
+workEnv/clientParameter.py
+testEnv/clientParameter.py
