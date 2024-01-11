@@ -50,7 +50,8 @@ async def offline(client: Client, seconds: int, from_: str):
     import pyrogram.raw.functions.account as acc  # offline
     import asyncio  # offline
     await client.send_message(chat_id=terminal_id,
-                              text=f"Verrai settato offline tra {seconds},{seconds*2},{seconds*3} e {seconds*4}s\n"
+                              text=f"Verrai settato offline tra {seconds},{seconds * 2},"
+                                   f"{seconds * 3} e {seconds * 4}s\n"
                                    f"from: {from_}")
     await client.invoke(acc.UpdateStatus(offline=True))  # 0s
     await asyncio.sleep(seconds)
@@ -79,7 +80,8 @@ async def handle_commands(client: Client, msg: Msg):
         text = ("Lista di comandi\n\n-h = -help = -? = -commands = -c : questo messaggio\n"
                 "-0 : greetings\n-1 : Dammi un attimo + inserito in lista \"reply_waiting\"\n"
                 "reply waiting::\n    -r = -remove : rimuovi dalla rw list la chat in cui hai scritto il comando\n"
-                "    -grw = -gw : get reply waiting list (terminal)"
+                "    -grw = -gw : get reply waiting list (terminal)\n"
+                "-output : stampa i file di output dei 3 bot\n"
                 "-auto : \"uso i messaggi automatici perché..\"\n-offline : setta offline il profilo\n"
                 "-ping : ping in chat\n-pingt : ping in terminale\n-getall = -ga : su 3 file\n"
                 "-get = -g : -getchat or -getreply\n-getchat : ottiene info base della chat\n"
@@ -103,7 +105,22 @@ async def handle_commands(client: Client, msg: Msg):
                  " - per ottenere la lista: comando -gw / -grw"
         )
 
-    # Esegui le azioni desiderate in base al comando
+    elif cmd_txt == "output":
+        from .myParameter import ubot1output, ubot2output, infobotoutput
+        await client.delete_messages(chat_id=msg.chat.id, message_ids=msg.id)
+
+        async def printoutput(path: str, title: str):
+            text_ = open(path, "r").read()
+            if text_ == "":
+                text_ = f"{title}: output.txt\n\nfile vuoto"
+            else:
+                text_ = f"{title}: output.txt\n\n" + text_
+            await client.send_message(chat_id=terminal_id, text=text_)
+        # End def
+        await printoutput(ubot1output, "Ubot1")
+        await printoutput(ubot2output, "Ubot2")
+        await printoutput(infobotoutput, "Infobot")
+
     elif cmd_txt == "0":
         await client.edit_message_text(chat_id=msg.chat.id, message_id=msg.id,
                                        text="buondì\ncome va?")
@@ -223,7 +240,7 @@ async def handle_commands(client: Client, msg: Msg):
         except Exception as e:
             await client.send_message(chat_id=terminal_id, text=f"{e}\n\nil comando cerca per id o per username")
 
-    elif cmd_txt in ["null", "vuoto", "void",  " ", "", "spazio", None]:
+    elif cmd_txt in ["null", "vuoto", "void", " ", "", "spazio", None]:
         c_id = msg.chat.id
         await client.delete_messages(chat_id=c_id, message_ids=msg.id)
         rmsg = msg.reply_to_message

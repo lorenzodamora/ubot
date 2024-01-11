@@ -1,0 +1,1 @@
+output1 e output2 sono uguali
