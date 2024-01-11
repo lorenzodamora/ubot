@@ -1,3 +1,14 @@
+import sys
+
+sys.path.append('/home/ubuntu/Magnus/PycharmProj/ubot/python/python3.12/site-packages')
+
+# Ora puoi importare i moduli Pyrogram e TgCrypto
+import pyrogram
+import tgcrypto
+
+# Resto del tuo script...
+
+
 from pyrogram import Client
 
 # crea accanto a main.py il file myClientParameter.py con dentro queste tre variabili, io l'ho messo in .gitignore

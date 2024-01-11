@@ -1,6 +1,11 @@
 
+# python cache
 *.pyc
-*.session-journal
+
+# telegram session
 *.session
-workEnv/clientParameter.py
-testEnv/clientParameter.py
+*.session-journal
+
+# token e api
+*/myClientParameter.py
+*/clientParameter.py

@@ -6,7 +6,7 @@ from pyrogram import Client
 # import time
 '''
 
-# crea accanto a main.py il file clientParameter.py con dentro queste tre variabili, io l'ho messo in .gitignore
+# crea accanto a main.py il file myClientParameter.py con dentro queste tre variabili, io l'ho messo in .gitignore
 from clientParameter import t_id, t_hash, t_phone
 '''
 t_id = "id numerico"
@@ -28,9 +28,6 @@ app = Client("my_account", api_id=t_id, api_hash=t_hash, phone_number=t_phone, p
 @app.on_message(filters.command("test", "-") & filters.me)
 def test(client, message):
     client.edit_message_text(chat_id=message.chat.id, message_id=message.id, text="test text")
-'''
-
-'''
 @app.on_message(filters.mentioned & filters.group)
 def replyoffline(client, message):
     me = client.get_users("me")

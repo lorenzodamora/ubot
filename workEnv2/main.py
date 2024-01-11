@@ -13,7 +13,7 @@ plugins = dict(root="plugins")
 
 open("reply_waiting.txt", 'w').truncate()
 
-app = Client("my_account1", api_id=t_id, api_hash=t_hash, phone_number=t_phone, plugins=plugins)
+app = Client("my_account2", api_id=t_id, api_hash=t_hash, phone_number=t_phone, plugins=plugins)
 
 with app:
     app.send_message(chat_id=tid, text="Ready")
