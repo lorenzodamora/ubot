@@ -1,5 +1,5 @@
 from platform import system
-print(f"System: {system()}")
+# print(f"System: {system()}")
 if system() == "Windows":
     ubot1output = "../output.txt"
     ubot2output = "../output.txt"
