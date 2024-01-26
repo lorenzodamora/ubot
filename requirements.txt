@@ -1,0 +1,5 @@
+wheel
+https://github.com/KurimuzonAkuma/pyrogram/archive/dev.zip
+tgcrypto
+pushbullet.py
+uvloop

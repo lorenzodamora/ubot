@@ -2,5 +2,8 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../infobot" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../meteoATbot" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../stepsbot" vcs="Git" />
   </component>
 </project>

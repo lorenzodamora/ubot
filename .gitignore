@@ -7,6 +7,6 @@
 *.session-journal
 
 # token e api
-*/myClientParameter.py
-*/clientParameter.py
-*/pushbullet_APIKEY.py
+/pushbullet_APIKEY.py
+/*/myClientParameter.py
+/*/clientParameter.py
