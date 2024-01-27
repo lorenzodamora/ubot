@@ -7,9 +7,9 @@ infobot_output = "../../infobot/output.txt"
 meteo_output = "../../meteoATbot/output.txt"
 # elif system() == "Linux":
 all_output = "/home/ubuntu/Magnus/PycharmProj/output_dir/"
-MY_ID = 1259233812
-MY_TAG = '@ill_lore'
-MY_ID2 = 649363031
+MY_ID = 649363031
+MY_TAG = '@ill_magnus'
+MY_ID2 = 1259233812
 # terminal_id = -4030133781
 TERMINAL_ID = -1001995530063  # update to supergroup
 # Forum: Saved Message > Topic:Pic

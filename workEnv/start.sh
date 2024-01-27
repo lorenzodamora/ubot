@@ -1,3 +1,6 @@
-# python3 -u main.py
-# C:\Users\ldamo\PycharmProjects\ubot\.venv\Scripts\python.exe C:\Users\ldamo\PycharmProjects\ubot\workEnv\main.py
-/home/ubuntu/Magnus/PycharmProj/ubot/python/python3.12/bin/python3.12 -u /home/ubuntu/Magnus/PycharmProj/ubot/workEnv/mainVps.py
+#!/bin/bash
+project_path="/home/ubuntu/Magnus/PycharmProj/ubot/"
+cd "${project_path}"
+source "${project_path}/.python_venv/bin/activate"
+cd "workEnv"
+python -u mainVps.py >> ../output.txt 2>&1

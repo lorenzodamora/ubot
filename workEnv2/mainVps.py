@@ -3,15 +3,14 @@ from pyrogram import Client, idle
 # crea accanto a main.py il file myClientParameter.py con dentro queste tre variabili, io l'ho messo in .gitignore
 from myClientParameter import t_id, t_hash, t_phone, pushbullet_API_KEY as pushKey
 from plugins.myParameters import TERMINAL_ID as TID
-
-'''
 from pushbullet import Pushbullet
+'''
 t_id = "id numerico"
 t_hash = "hash alfanumerico"
 t_phone = "numero di telefono"
 '''
 
-# pb = Pushbullet(pushKey)
+pb = Pushbullet(pushKey)
 plugins = dict(root="plugins")
 open("reply_waiting.txt", 'w').truncate()
 title = "Ubot2"
@@ -28,14 +27,13 @@ async def main():
 
     await app.start()
     await app.send_message(chat_id=TID, text="Ready")
-    # pb.push_note(title, "Ready")
-    print("READY")
+    pb.push_note(title, "Ready")
+    # print("READY")
     await idle()
 
-    # pb.push_note(title, "Stop")
+    pb.push_note(title, "Stop")
     await app.send_message(chat_id=TID, text="Stop")
-    print("Stop")
-
+    # print("Stop")
 
 if __name__ == "__main__":
     import uvloop

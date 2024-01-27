@@ -73,7 +73,7 @@ async def non_risposto(client: Client, chat_id):
     time = ore_attese * 60 * 60 - get_ore_attese_t(tempo_atteso-1) * 60 * 60
     # time = ore_attese - get_ore_attese_t(tempo_atteso - 1)
     if time == 0:
-        from .myParameter import terminal_id
+        from .myParameters import terminal_id
         await client.send_message(chat_id=terminal_id, text=f"una persona ha aspettato più di 48 ore."
                                                             f"id:\n(fare -search in reply)")
         await client.send_message(chat_id=terminal_id, text=str(chat_id))
@@ -92,7 +92,7 @@ async def non_risposto(client: Client, chat_id):
         async for message in client.get_chat_history(chat_id, limit=1):
             last_msg = message
     # Verifica se l'ultimo messaggio è stato inviato da te
-    from .myParameter import my_id
+    from .myParameters import my_id
     if last_msg.from_user.id != my_id:
         ore_attese = await get_ore_attese_id(chat_id)
         await client.send_message(chat_id=chat_id,
