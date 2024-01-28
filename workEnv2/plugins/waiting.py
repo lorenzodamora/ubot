@@ -138,7 +138,7 @@ async def benvenuto(client: Client, msg: Msg):
         if isinstance(raw_msg, MessageService):
             if isinstance(raw_msg.action, MessageActionContactSignUp):
                 await client.send_message(chat_id=chat_id,
-                                          text="Benvenutə su telegram! Se hai bisogno di una guida oppure semplicemente"
+                                          text="Benvenutə su telegram! Se hai bisogno di una guida oppure semplicemente "
                                                "abituarti a telegram conversiamo volentieri!")
 
     if num_msg > 2:

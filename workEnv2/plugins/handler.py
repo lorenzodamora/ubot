@@ -82,7 +82,7 @@ async def event_handler(client: Client, m: Msg):
     is_me: bool = bool(fr_u and fr_u.is_self or not incoming)
 
     # group -1
-    if is_me and is_pvt and not m.text.startswith(PC + '1'):
+    if is_me and is_pvt and not (m.text and m.text.startswith(PC + '1')):
         from .waiting import remove_rw
         _ = create_task(remove_rw(str(ch.id)))
 
@@ -765,6 +765,7 @@ async def handle_send_to(client: Client, msg: Msg):
                                       message_ids=msg.reply_to_message_id)
 
     elif check_cmd(cmd_txt, {'2': 1}):
+        await msg.delete()
         from .myParameters import MY_ID2
         await client.forward_messages(chat_id=MY_ID2, from_chat_id=c_id,
                                       message_ids=msg.reply_to_message_id)
