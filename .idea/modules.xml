@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/../Kurimuzon-Userbot-master/Kurimuzon-Userbot-master/.idea/Kurimuzon-Userbot-master.iml" filepath="$PROJECT_DIR$/../Kurimuzon-Userbot-master/Kurimuzon-Userbot-master/.idea/Kurimuzon-Userbot-master.iml" />
       <module fileurl="file://$PROJECT_DIR$/../infobot/.idea/infobot.iml" filepath="$PROJECT_DIR$/../infobot/.idea/infobot.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../infobot/mazzoBot/.idea/mazzoBot.iml" filepath="$PROJECT_DIR$/../infobot/mazzoBot/.idea/mazzoBot.iml" />
       <module fileurl="file://$PROJECT_DIR$/../meteoATbot/.idea/meteoATbot.iml" filepath="$PROJECT_DIR$/../meteoATbot/.idea/meteoATbot.iml" />
       <module fileurl="file://$PROJECT_DIR$/../stepsbot/.idea/stepsbot.iml" filepath="$PROJECT_DIR$/../stepsbot/.idea/stepsbot.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/ubot.iml" filepath="$PROJECT_DIR$/.idea/ubot.iml" />

@@ -11,5 +11,6 @@
     <orderEntry type="module" module-name="infobot" />
     <orderEntry type="module" module-name="ubot-tg-py-master" />
     <orderEntry type="module" module-name="meteoATbot" />
+    <orderEntry type="module" module-name="mazzoBot" />
   </component>
 </module>

@@ -8,6 +8,7 @@ from pyrogram.raw.base import Update
 from pyrogram.raw.types import UpdateNewMessage
 from .myParameters import TERMINAL_ID, PREFIX_COMMAND as PC, PREFIX_SEND_TO as PS
 from asyncio import create_task, Lock
+
 raw_msgs = {}
 raw_lock = Lock()
 request_lock = Lock()
@@ -355,9 +356,7 @@ async def handle_commands(client: Client, msg: Msg):
                 "`0` : greetings\n`1` : Dammi un attimo + inserito in lista \"reply_waiting\"\n"
                 "\nreply waiting::\n    `r` / `remove` : rimuovi dalla rw list la chat in cui hai scritto il comando\n"
                 "    `grw` / `gw` : get reply waiting list (terminal)\n\n"
-                "`del` : elimina l'ultimo messaggio, oppure quello in reply\n  \"  "
-                "__{n: int}__ : elimina n messaggi, a partire dall'ultimo o dal reply, (nel conteggio, messaggio "
-                "__'del'__ escluso)\n"
+                "`del` : elimina il messaggio in reply\n"
                 "`thisid` / `thisMsgId` / `MsgId` : modifica il messaggio col suo id\n"
                 "  \"  __{n: int}__ : invia n messaggi con id\n"
                 "`output` : stampa i file di output dei bot\n"
@@ -388,6 +387,7 @@ async def handle_commands(client: Client, msg: Msg):
                  " - per ottenere la lista: comando gw / grw"
         )
 
+        '''
     elif cmd_txt == 'fold':
         from pyrogram.raw.functions.messages import GetDialogFilters
         from asyncio import sleep
@@ -408,7 +408,17 @@ async def handle_commands(client: Client, msg: Msg):
                     await sleep(20)
             # end while
         # end for
+        '''
 
+    elif check_cmd(cmd_txt, {'del': 1}):
+        await msg.delete()
+        rmsg = msg.reply_to_message
+        if not rmsg:
+            await client.send_message(chat_id=TERMINAL_ID, text=f"nessun reply per il comando {PC}del")
+            return
+        await rmsg.delete()
+
+        '''
     elif check_cmd(cmd_txt, {'del': 2}):
         await msg.delete()
         ids = []
@@ -429,6 +439,7 @@ async def handle_commands(client: Client, msg: Msg):
         except Exception as e:
             await client.send_message(chat_id=TERMINAL_ID, text=f"comando {msg.text}\n"
                                                                 f"Errore:\n{e}\n{e.with_traceback(None)}")
+        '''
 
     elif check_cmd(cmd_txt, {'thisid': 2, 'thisMsgId': 2, 'MsgId': 2}):
         rmsg = msg.reply_to_message
