@@ -74,6 +74,12 @@ async def raw_handler(_, update: Update, __, ___):
 
 @Client.on_message(group=1)
 async def event_handler(client: Client, m: Msg):
+    import chardet
+    encode_valid = True
+    result = chardet.detect(m.text.encode())
+    if str(result['encoding']) == 'None':
+        encode_valid = False
+
     ch: Chat = m.chat
     fr_u: User = m.from_user
     c_type: ChatType = ch.type
@@ -83,11 +89,11 @@ async def event_handler(client: Client, m: Msg):
     is_me: bool = bool(fr_u and fr_u.is_self or not incoming)
 
     # group -1
-    if is_me and is_pvt and not (m.text and m.text.startswith(PC + '1')):
+    if encode_valid and is_me and is_pvt and not (m.text and m.text.startswith(PC + '1')):
         from .waiting import remove_rw
         _ = create_task(remove_rw(str(ch.id)))
 
-    if is_me and m.text:
+    if encode_valid and is_me and m.text:
         # group 1
         if m.text[0] == PC:
             _ = create_task(handle_commands(client, m))
@@ -101,7 +107,7 @@ async def event_handler(client: Client, m: Msg):
         _ = create_task(benvenuto(client, m))
 
     # group 4 | handle_commands_for_other trigger: start with (MY_TAG + ' ' + PC + {cmd_txt})
-    if incoming and m.text:
+    if encode_valid and incoming and m.text:
         from .myParameters import MY_TAG
         if m.text.lower().startswith(MY_TAG + ' ' + PC):
             _ = create_task(handle_commands_for_other(client, m))
