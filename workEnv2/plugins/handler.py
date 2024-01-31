@@ -76,9 +76,10 @@ async def raw_handler(_, update: Update, __, ___):
 async def event_handler(client: Client, m: Msg):
     import chardet
     encode_valid = True
-    result = chardet.detect(m.text.encode())
-    if str(result['encoding']) == 'None':
-        encode_valid = False
+    if m.text:
+        result = chardet.detect(m.text.encode())
+        if str(result['encoding']) == 'None':
+            encode_valid = False
 
     ch: Chat = m.chat
     fr_u: User = m.from_user
