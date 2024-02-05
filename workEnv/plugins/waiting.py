@@ -128,8 +128,12 @@ async def non_risposto(client: Client, chat_id):
 async def benvenuto(client: Client, msg: Msg):
     # Ottieni il numero di messaggi nella chat
     chat_id = msg.chat.id
-    num_msg: int = await client.get_chat_history_count(chat_id=chat_id)
-
+    from pyrogram.errors.exceptions.flood_420 import FloodWait
+    try:
+        num_msg: int = await client.get_chat_history_count(chat_id=chat_id)
+    except FloodWait:
+        return
+    
     if num_msg == 1:
         from .handler import raw_lock, raw_msgs
         async with raw_lock:
