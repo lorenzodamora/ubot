@@ -10,3 +10,5 @@
 /pushbullet_APIKEY.py
 /*/myClientParameter.py
 /*/clientParameter.py
+*.sqlite
+*/plugins/utils/db_name.py

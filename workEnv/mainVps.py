@@ -1,7 +1,7 @@
 from pyrogram import Client, idle
 
 # crea accanto a main.py il file myClientParameter.py con dentro queste tre variabili, io l'ho messo in .gitignore
-from myClientParameter import t_id, t_hash, t_phone, pushbullet_API_KEY as pushKey
+from myClientParameter import t_id, t_hash, t_phone, pushbullet_API_KEY as pushKey, OPENAI_API_KEY
 from plugins.myParameters import TERMINAL_ID as TID
 from pushbullet import Pushbullet
 '''
@@ -16,7 +16,15 @@ open("reply_waiting.txt", 'w').truncate()
 title = "Ubot1"
 
 
-async def main():
+async def main(dev=False):
+    from os import environ
+    if dev:
+        environ['dev'] = '1'
+    else:
+        environ['dev'] = '0'
+
+    environ['OPENAI_API_KEY'] = OPENAI_API_KEY
+
     app = Client(
         name=title,
         api_id=t_id,
@@ -27,15 +35,33 @@ async def main():
 
     await app.start()
     await app.send_message(chat_id=TID, text="Ready")
-    pb.push_note(title, "Ready")
-    # print("READY")
+    if not dev:
+        pb.push_note(title, "Ready")
+    else:
+        print("READY")
     await idle()
 
-    pb.push_note(title, "Stop")
+    if not dev:
+        pb.push_note(title, "Stop")
+    else:
+        print("Stop")
     await app.send_message(chat_id=TID, text="Stop")
-    # print("Stop")
 
 if __name__ == "__main__":
+    from sys import argv, exit
+
+    if len(argv) > 2:
+        print("Usage: python3 -u main.py [<parameter>]")
+        exit(1)
+    parameter = False
+    if len(argv) == 2:
+        if argv[1] == "dev":
+            parameter = True
+            print('dev on')
+        else:
+            print("parameters:\n\t[no parameter]\n\tdev")
+            exit(1)
+
     import uvloop
     uvloop.install()
 
@@ -45,10 +71,10 @@ if __name__ == "__main__":
         from asyncio import Runner
 
         with Runner() as runner:
-            runner.get_loop().run_until_complete(main())
+            runner.get_loop().run_until_complete(main(parameter))
 
     else:
         from asyncio import new_event_loop
 
         loop = new_event_loop()
-        loop.run_until_complete(main())
+        loop.run_until_complete(main(parameter))

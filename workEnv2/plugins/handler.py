@@ -417,59 +417,31 @@ async def handle_commands(client: Client, msg: Msg):
         # end for
         '''
 
-    elif check_cmd(cmd_txt, {'del': 1}):
-        await msg.delete()
-        rmsg = msg.reply_to_message
-        if not rmsg:
-            await client.send_message(chat_id=TERMINAL_ID, text=f"nessun reply per il comando {PC}del")
-            return
-        await rmsg.delete()
-
         '''
-    elif check_cmd(cmd_txt, {'del': 2}):
-        await msg.delete()
-        ids = []
-        try:
-            n = int(cmd_txt.split(" ")[1])
-        except:
-            n = 1
-        try:
-            rmsg = msg.reply_to_message
-            start = rmsg.id if rmsg else msg.id - 1
-            for i in range(0, n):
-                ids.append(start - i)
-            effettivi = await client.delete_messages(chat_id=msg.chat.id, message_ids=ids)
-            x = 0
-            while effettivi != n:
-                x += 1
-                effettivi += await client.delete_messages(chat_id=msg.chat.id, message_ids=start-n-x)
-        except Exception as e:
-            await client.send_message(chat_id=TERMINAL_ID, text=f"comando {msg.text}\n"
-                                                                f"Errore:\n{e}\n{e.with_traceback(None)}")
-        '''
+    # region ChatGPT
+    elif check_cmd(cmd_txt, {'gpt': 2, 'chatGPT': 2}):
+        from .gpt import chatpgt
+        await chatpgt(msg)
 
-    elif check_cmd(cmd_txt, {'thisid': 2, 'thisMsgId': 2, 'MsgId': 2}):
+    elif check_cmd(cmd_txt, {'rgpt': 2, 'replyChatGPT': 2}):
         rmsg = msg.reply_to_message
         if rmsg:
-            await msg.edit_text(str(rmsg.id))
-            return
-        try:
-            n = int(cmd_txt.split(" ")[1])
-        except:
-            n = 1
-        await msg.edit_text(str(msg.id))
-        n -= 1
-        from asyncio import sleep
-        for i in range(0, n):
-            uncomplete = True
-            while uncomplete:
-                try:
-                    msg = await client.send_message(chat_id=msg.chat.id, text="thisid")
-                    uncomplete = False
-                    await msg.edit_text(str(msg.id))
-                except:
-                    await sleep(10)
+            from .gpt import chatpgt
+            await chatpgt(rmsg)
+        else:
+            await client.send_message(chat_id=TERMINAL_ID, text=f"nessun reply per il comando {PC}rgpt")
 
+    elif check_cmd(cmd_txt, {'gptst': 2, 'gptSet': 2}):
+        from .gpt import chatpgt_set_key
+        await chatpgt_set_key(msg)
+
+    elif check_cmd(cmd_txt, {'gptcl': 2, 'gptClear': 2}):
+        from .gpt import chatpgt_clear
+        await chatpgt_clear(msg)
+    # endregion
+        '''
+
+    # region print
     # TODO parametri
     elif check_cmd(cmd_txt, {'output': 2}):
         from pyrogram.enums import ParseMode
@@ -551,7 +523,9 @@ async def handle_commands(client: Client, msg: Msg):
         for file in [f for f in listdir("./ga")]:
             await printoutput(f"ga/{file}")
         await client.send_message(chat_id=TERMINAL_ID, text="end print")
+    # endregion
 
+    # region fast
     elif check_cmd(cmd_txt, {'0': 1}):
         await client.edit_message_text(chat_id=msg.chat.id, message_id=msg.id,
                                        text="buondì\ncome va?")
@@ -572,6 +546,13 @@ async def handle_commands(client: Client, msg: Msg):
             open('reply_waiting.txt', 'a').write(f"{chat_id};1\n")
         await non_risposto(client, chat_id)
 
+    elif check_cmd(cmd_txt, {'auto': 1}):
+        await client.edit_message_text(chat_id=msg.chat.id, message_id=msg.id,
+                                       text="uso i messaggi automatici solo per far prima e poter gestire più persone,"
+                                            "senza andare ad ignorare qualcuno involontariamente")
+    # endregion
+
+    # region reply-wait
     elif check_cmd(cmd_txt, {'r': 1, 'remove': 1}):
         c_id = msg.chat.id
         await msg.delete()
@@ -588,12 +569,9 @@ async def handle_commands(client: Client, msg: Msg):
         else:
             text = "reply_waiting.txt\n\n" + text
         await client.send_message(chat_id=TERMINAL_ID, text=text)
+    # endregion
 
-    elif check_cmd(cmd_txt, {'auto': 1}):
-        await client.edit_message_text(chat_id=msg.chat.id, message_id=msg.id,
-                                       text="uso i messaggi automatici solo per far prima e poter gestire più persone,"
-                                            "senza andare ad ignorare qualcuno involontariamente")
-
+    # region service commands
     # TODO parametro seconds
     elif check_cmd(cmd_txt, {'offline': 2}):
         await msg.delete()
@@ -607,6 +585,62 @@ async def handle_commands(client: Client, msg: Msg):
         from .commands import pong
         await pong(client, msg, True)
         '''
+
+    elif check_cmd(cmd_txt, {'del': 1}):
+        await msg.delete()
+        rmsg = msg.reply_to_message
+        if not rmsg:
+            await client.send_message(chat_id=TERMINAL_ID, text=f"nessun reply per il comando {PC}del ")
+            return
+        await rmsg.delete()
+
+        '''
+    elif check_cmd(cmd_txt, {'del': 2}):
+        await msg.delete()
+        ids = []
+        try:
+            n = int(cmd_txt.split(" ")[1])
+        except:
+            n = 1
+        try:
+            rmsg = msg.reply_to_message
+            start = rmsg.id if rmsg else msg.id - 1
+            for i in range(0, n):
+                ids.append(start - i)
+            effettivi = await client.delete_messages(chat_id=msg.chat.id, message_ids=ids)
+            x = 0
+            while effettivi != n:
+                x += 1
+                effettivi += await client.delete_messages(chat_id=msg.chat.id, message_ids=start-n-x)
+        except Exception as e:
+            await client.send_message(chat_id=TERMINAL_ID, text=f"comando {msg.text}\n"
+                                                                f"Errore:\n{e}\n{e.with_traceback(None)}")
+        '''
+
+    # endregion
+
+    # region get
+    elif check_cmd(cmd_txt, {'thisid': 2, 'thisMsgId': 2, 'MsgId': 2}):
+        rmsg = msg.reply_to_message
+        if rmsg:
+            await msg.edit_text(str(rmsg.id))
+            return
+        try:
+            n = int(cmd_txt.split(" ")[1])
+        except:
+            n = 1
+        await msg.edit_text(str(msg.id))
+        n -= 1
+        from asyncio import sleep
+        for i in range(0, n):
+            uncomplete = True
+            while uncomplete:
+                try:
+                    msg = await client.send_message(chat_id=msg.chat.id, text="thisid")
+                    uncomplete = False
+                    await msg.edit_text(str(msg.id))
+                except:
+                    await sleep(10)
 
     # TODO parameters
     elif check_cmd(cmd_txt, {'getall': 2, 'ga': 2}):
@@ -687,7 +721,9 @@ async def handle_commands(client: Client, msg: Msg):
         except Exception as e:
             await client.send_message(chat_id=TERMINAL_ID, text=f"{e}\n\nil comando cerca per id o per username",
                                       parse_mode=ps)
+    # endregion
 
+    # region special
     elif check_cmd(cmd_txt, {'moon': 2, 'luna': 2}):
         moon_list = ["🌕", "🌖", "🌗", "🌘", "🌑", "🌒", "🌓", "🌔"]
         from asyncio import sleep, create_task
@@ -737,6 +773,7 @@ async def handle_commands(client: Client, msg: Msg):
             await rmsg.reply_text("ㅤ")
         else:
             await client.send_message(chat_id=msg.chat.id, text="ㅤ")
+    # endregion
 
     else:
         c_id = msg.chat.id

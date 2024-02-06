@@ -4,3 +4,5 @@ tgcrypto
 pushbullet.py
 uvloop
 chardet
+openai
+aiosqlite
