@@ -2,5 +2,5 @@
 project_path="/home/ubuntu/Magnus/PycharmProj/ubot2/"
 cd "${project_path}"
 source "${project_path}/.python_venv/bin/activate"
-python -u check_output.py &
+python -u check_output_2.py &
 deactivate
