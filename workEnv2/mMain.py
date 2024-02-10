@@ -1,9 +1,10 @@
 from pyrogram import Client, idle
 
-# crea accanto a main.py il file myClientParameter.py con dentro queste tre variabili, io l'ho messo in .gitignore
+# crea accanto a mMain.py il file myClientParameter.py con dentro queste tre variabili, io l'ho messo in .gitignore
 from myClientParameter import t_id, t_hash, t_phone, pushbullet_API_KEY as pushKey, OPENAI_API_KEY
 from plugins.myParameters import TERMINAL_ID as TID
 from pushbullet import Pushbullet
+
 '''
 t_id = "id numerico"
 t_hash = "hash alfanumerico"
@@ -47,11 +48,12 @@ async def main(dev=False):
         print("Stop")
     await app.send_message(chat_id=TID, text="Stop")
 
+
 if __name__ == "__main__":
     from sys import argv, exit
 
     if len(argv) > 2:
-        print("Usage: python3 -u main.py [<parameter>]")
+        print("Usage: python3 -u mMain.py [<parameter>]")
         exit(1)
     parameter = False
     if len(argv) == 2:
@@ -62,7 +64,12 @@ if __name__ == "__main__":
             print("parameters:\n\t[no parameter]\n\tdev")
             exit(1)
 
-    from platform import python_version_tuple
+    from platform import python_version_tuple, system
+
+    if system() == "Linux":
+        import uvloop
+
+        uvloop.install()
 
     if python_version_tuple() >= ("3", "11"):
         from asyncio import Runner
