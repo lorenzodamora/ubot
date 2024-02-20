@@ -90,17 +90,19 @@ async def event_handler(client: Client, m: Msg):
     is_me: bool = bool(fr_u and fr_u.is_self or not incoming)
 
     # group -1
-    if encode_valid and is_me and is_pvt and not (m.text and m.text.startswith(PC + '1')):
-        from .waiting import remove_rw
-        _ = create_task(remove_rw(str(ch.id)))
+    if encode_valid:
+        if is_me and is_pvt and not (m.text and m.text.startswith(PC + '1')):
+            from .waiting import remove_rw
+            _ = create_task(remove_rw(str(ch.id)))
 
-    if encode_valid and is_me and m.text:
-        # group 1
-        if m.text[0] == PC:
-            _ = create_task(handle_commands(client, m))
-        # group 2
-        elif m.text[0] == PS:
-            _ = create_task(handle_send_to(client, m))
+    if encode_valid:
+        if is_me and m.text:
+            # group 1
+            if m.text[0] == PC:
+                _ = create_task(handle_commands(client, m))
+            # group 2
+            elif m.text[0] == PS:
+                _ = create_task(handle_send_to(client, m))
 
     # group 3
     if is_pvt and incoming:
@@ -108,10 +110,11 @@ async def event_handler(client: Client, m: Msg):
         _ = create_task(benvenuto(client, m))
 
     # group 4 | handle_commands_for_other trigger: start with (MY_TAG + ' ' + PC + {cmd_txt})
-    if encode_valid and incoming and m.text:
-        from .myParameters import MY_TAG
-        if m.text.lower().startswith(MY_TAG + ' ' + PC):
-            _ = create_task(handle_commands_for_other(client, m))
+    if encode_valid:
+        if incoming and m.text:
+            from .myParameters import MY_TAG
+            if m.text.lower().startswith(MY_TAG + ' ' + PC):
+                _ = create_task(handle_commands_for_other(client, m))
 
 
 # @Client.on_message(f.me & f.text & f.regex(r'^\,'), group=1)
