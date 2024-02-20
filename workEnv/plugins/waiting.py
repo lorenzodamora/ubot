@@ -125,6 +125,7 @@ async def non_risposto(client: Client, chat_id):
 
 
 # @Client.on_message(f.private & f.incoming & ~f.bot, group=3)
+# if is_pvt and incoming:
 async def benvenuto(client: Client, msg: Msg):
     # Ottieni il numero di messaggi nella chat
     chat_id = msg.chat.id
