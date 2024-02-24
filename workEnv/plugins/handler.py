@@ -98,10 +98,10 @@ async def event_handler(client: Client, m: Msg):
     if encode_valid:
         if is_me and m.text:
             # group 1
-            if m.text[0] == PC:
+            if m.text.startswith(PC):
                 _ = create_task(handle_commands(client, m))
             # group 2
-            elif m.text[0] == PS:
+            elif m.text.startswith(PS):
                 _ = create_task(handle_send_to(client, m))
 
     # group 3
