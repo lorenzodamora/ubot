@@ -1,5 +1,5 @@
 """
-questo file gestisce la reply waiting e il benvenuto
+gestisce la reply waiting logic e il benvenuto
 """
 from pyrogram import Client
 from pyrogram.types import Message as Msg

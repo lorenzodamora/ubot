@@ -1,3 +1,6 @@
+"""
+funzione esterna non presente in pyrogram
+"""
 from pyrogram import Client
 from pyrogram.types import Message
 from pyrogram.raw import functions, types

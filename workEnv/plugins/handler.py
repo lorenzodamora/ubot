@@ -1,5 +1,6 @@
 """
-questo file è l'event handler, evito di usare i filter per evitare certi strani bug
+event handler
+evito di usare i filter per evitare certi strani bug
 """
 from pyrogram import Client
 from pyrogram.types import Message as Msg, Chat, User
@@ -131,7 +132,7 @@ async def handle_commands(client: Client, msg: Msg):
     # TODO rifare più ordinato, con parametri
     elif check_cmd(cmd_txt, {'h': 2, 'help': 2, '?': 2, 'commands': 2, 'c': 2}):
         await msg.delete()
-        text = (f"**Lista di comandi**\n\nIl prefix è '{PC}'\n\n"
+        text = (f"**Lista di comandi**\n\nIl prefix è '`{PC}`'\n\n"
                 f"`h` / `help` / `?` / `commands` / `c` : questo messaggio\n"
                 "`0` : greetings\n`1` : Dammi un attimo + inserito in lista \"reply_waiting\"\n"
                 "\nreply waiting::\n    `r` / `remove` : rimuovi dalla rw list la chat in cui hai scritto il comando\n"
@@ -139,7 +140,7 @@ async def handle_commands(client: Client, msg: Msg):
                 "`del` : elimina il messaggio in reply\n"
                 "`thisid` / `thisMsgId` / `MsgId` : modifica il messaggio col suo id\n"
                 "  \"  __{n: int}__ : invia n messaggi con id\n"
-                "`output` : stampa i file di output dei bot\n"
+                "`output` / `out` / `po`: stampa i file di output dei bot\n"
                 "`auto` : \"uso i messaggi automatici perché..\"\n`offline` : setta offline il profilo\n"
                 "`ping` : ping in chat\n`pingt` : ping in terminale\n`getall` / `ga` : su 4 file\n"
                 "    `pga` / `printga` : stampa file ga in terminale\n"
@@ -153,6 +154,10 @@ async def handle_commands(client: Client, msg: Msg):
                 f"`save` : inoltra in saved message\n"
                 "`t` / `terminal` : inoltra il reply in terminale\n"
                 "`2` : inoltra il reply al secondo profilo\n"
+                "`eval h` / `exec ?` : guarda l'help di exec\n"
+                "`reval h` / `rexec ?` : guarda l'help di reply exec\n"
+                "`fe h` : guarda l'help di file-exec\n"
+                "`pr` / `pt` : stampa result o traceback (eval)\n"
                 f"\ni comandi {PC}. e {PS}. modificano annullando il comando e cancellando il punto")
         await client.send_message(chat_id=TERMINAL_ID, text=text)
         await client.send_message(
@@ -193,7 +198,7 @@ async def handle_commands(client: Client, msg: Msg):
 
     # region print
     # TODO parametri
-    elif check_cmd(cmd_txt, {'output': 2}):
+    elif check_cmd(cmd_txt, {'output': 2, 'out': 2, 'po': 2}):
         from pyrogram.enums import ParseMode
         from platform import system
         ps = ParseMode.DISABLED
@@ -206,7 +211,7 @@ async def handle_commands(client: Client, msg: Msg):
             else:
                 txt = f"{title}: output.txt\n\n" + txt
             chunk_s = 4096
-            chunks = [txt[i:i + chunk_s] for i in range(0, len(txt), chunk_s)]
+            chunks = [txt[i_:i_ + chunk_s] for i_ in range(0, len(txt), chunk_s)]
 
             for chunk in chunks:
                 uncomplet = True
@@ -246,14 +251,15 @@ async def handle_commands(client: Client, msg: Msg):
         await msg.delete()
 
         async def printoutput(path: str):
+            from pyrogram.errors.exceptions.flood_420 import FloodWait
             if not exists(path):
                 await client.send_message(chat_id=TERMINAL_ID, text=f"il file {path} non esiste", parse_mode=ps)
                 return
             txt = open(path, "r").read()
             if txt == "":
-                txt = f"{path[3:]}: \n\nfile vuoto"
+                txt = f"{path[12:]}: \n\nfile vuoto"
             else:
-                txt = f"{path[3:]}: \n\n" + txt
+                txt = f"{path[12:]}: \n\n" + txt
             chunk_s = 4096
             chunks = [txt[i:i + chunk_s] for i in range(0, len(txt), chunk_s)]
 
@@ -263,16 +269,40 @@ async def handle_commands(client: Client, msg: Msg):
                     try:
                         await client.send_message(chat_id=TERMINAL_ID, text=str(chunk), parse_mode=ps)
                         uncomplet = False
-                    except:
+                    except FloodWait:
                         await sleep(20)
                 # end while
             # end for
 
         # End def
         from os import listdir
-        for file in [f for f in listdir("./ga")]:
-            await printoutput(f"ga/{file}")
+        for file in [f for f in listdir("./database/ga")]:
+            await printoutput(f"database/ga/{file}")
         await client.send_message(chat_id=TERMINAL_ID, text="end print")
+
+    elif check_cmd(cmd_txt, {'pr': 1, 'pt': 1}):
+        from asyncio import sleep
+        from pyrogram.errors.exceptions.flood_420 import FloodWait
+        rpath = "database/result.txt" if cmd_txt == 'pr' else "database/traceback.txt"
+        result_txt = open(rpath, "r", encoding='utf-8').read()
+        if result_txt == "":
+            result_txt = f"{rpath[9:]}: \n\nfile vuoto"
+        else:
+            result_txt = f"{rpath[9:]}: \n\n" + result_txt
+        chunk_s = 4096
+        chunks = [result_txt[i:i + chunk_s] for i in range(0, len(result_txt), chunk_s)]
+
+        for chunk in chunks:
+            uncomplet = True
+            while uncomplet:
+                try:
+                    await client.send_message(chat_id=TERMINAL_ID, text=str(chunk), parse_mode=ps)
+                    uncomplet = False
+                except FloodWait:
+                    await sleep(20)
+            # end while
+        # end for
+
     # endregion
 
     # region fast
@@ -322,6 +352,115 @@ async def handle_commands(client: Client, msg: Msg):
     # endregion
 
     # region service commands
+    elif check_cmd(cmd_txt, {'eval': 2, 'reval': 2, 'exec': 2, 'rexec': 2}):
+        txts = cmd_txt.split(maxsplit=1)
+        if len(txts) == 2:
+            if txts[1] in ['h', '?']:
+                from .code_runner import pre_exec
+                await msg.edit(
+                    f"`{PC}eval ` pre exec code is:\n\n"
+                    f"<pre language=\"python\">{pre_exec}</pre>\nfirst line:{pre_exec.count('\n') + 2}"
+                )
+                return
+        from .code_runner import python_exec
+        await python_exec(client, msg)
+
+    elif check_cmd(cmd_txt, {'feval': 2, 'fexec': 2, 'fe': 2}):
+        txts = cmd_txt.split(maxsplit=1)
+        if len(txts) == 1:
+            await msg.edit(msg.text + f"\n!! see `{PC}feval h`")
+            return
+
+        # if 1 char then command
+        if len(txts[1].split(maxsplit=1)[0]) == 1:
+            if txts[1] in ['h', '?']:
+                await msg.edit(
+                    f"`{PC}feval `(file exec)  parameters:\n\n"
+                    "`h` / `?` : this help\n\n"
+                    "[fname] [code] : run code, create file with fname\n"
+                    "if exist overwrite (min 2 char, one word)\n\n"
+                    "`f ` [fname] : run selected file\n\n"
+                    "`l` / `L` : list of files\n"
+                    'read file comment too (header: """\\n comment\\n""")\n\n'
+                    "`d `/`r `[Any]: delete file\n\n"
+                    f"`{PC}eval ?` : see pre_exec"
+                )
+                return
+
+            elif txts[1].startswith('f'):
+                txts = txts[1].split(maxsplit=2)
+                if len(txts) != 2:
+                    await msg.edit(f"per `{PC}feval f ` bisogna mettere il fileName")
+                    return
+                from os.path import exists
+                fpath = "database/py_exec/" + txts[1]
+                if not exists(fpath):
+                    await msg.edit(f"`{msg.text}`\nil file {txts[1]} non esiste")
+                    return
+                msg.text = f"{PC}eval " + open(fpath, 'r', encoding='utf-8').read()
+                from .code_runner import python_exec
+                await python_exec(client, msg)
+
+            elif txts[1] in ['l', 'L']:
+                from os import listdir
+                file_list = listdir("database/py_exec/")
+                result = ""
+                for file_name in file_list:
+                    fnote = ""
+                    is_note = False
+
+                    fstream = open("database/py_exec/" + file_name, 'r', encoding='utf-8')
+                    next(fstream)
+                    for line_number, line in enumerate(fstream, start=1):
+                        if line.startswith('"""'):
+                            is_note = True
+                            break
+                        elif line_number == 6:
+                            break
+                        else:
+                            fnote += line
+                    fstream.close()
+
+                    if not is_note:
+                        fnote = "no notes"
+                    result += f"{file_name}:\n{fnote}\n\n"
+                result = "list of py exec file:\n\n" + result
+                from pyrogram.errors.exceptions.bad_request_400 import MessageTooLong
+                try:
+                    await msg.edit_text(result)
+                except MessageTooLong:
+                    open("database/result.txt", 'w', encoding='utf-8').write(result)
+                    await msg.edit_text(f"file eval list: view database/result.txt or print with `{PC}pr")
+
+            elif txts[1].startswith(('d', 'r')):
+                txts = txts[1].split(maxsplit=2)
+                if len(txts) != 2:
+                    await msg.edit(f"per `{PC}feval d ` bisogna mettere il fileName")
+                    return
+                from os.path import exists
+                fpath = "database/py_exec/" + txts[1]
+                if not exists(fpath):
+                    await msg.edit(f"il file {txts[1]} non esiste")
+                    return
+                from os import remove
+                remove(fpath)
+                await msg.edit(f"`{msg.text}`\n!! file deleted !!")
+
+            else:
+                await msg.edit(f"`{msg.text}`\n!! command not found !!")
+                return
+
+        else:
+            fcrea = txts[1].split(maxsplit=1)
+            if len(fcrea) == 1:
+                await msg.edit(f"`{msg.text}`\n!! see `{PC}feval h`")
+                return
+            fpath = "database/py_exec/" + fcrea[0]
+            open(fpath, 'w', encoding='utf-8').write(fcrea[1])
+            msg.text = f"{PC}eval " + open(fpath, 'r', encoding='utf-8').read()
+            from .code_runner import python_exec
+            await python_exec(client, msg)
+
     # TODO parametro seconds
     elif check_cmd(cmd_txt, {'offline': 2}):
         await msg.delete()
@@ -368,26 +507,27 @@ async def handle_commands(client: Client, msg: Msg):
         # Crea la directory se non esiste già
         from os import makedirs
         from os.path import exists
-        if not exists("./ga"):
-            makedirs("./ga")
+        ga_fold = "./database/ga"
+        if not exists(ga_fold):
+            makedirs(ga_fold)
 
         def custom_serializer(obj):
             if isinstance(obj, Client):
                 return str(obj)
 
         from json import dumps
-        open("ga/ga_msg.txt", "w", encoding='utf-8').write(
+        open(ga_fold + "/ga_msg.txt", "w", encoding='utf-8').write(
             str(dumps(vars(msg), indent=2, default=custom_serializer)))
-        open("ga/ga_chat.txt", "w", encoding='utf-8').write(
+        open(ga_fold + "/ga_chat.txt", "w", encoding='utf-8').write(
             str(dumps(vars(await client.get_chat(msg.chat.id)), indent=2, default=custom_serializer)))
         if msg.reply_to_message:
-            open("ga/ga_rmsg.txt", "w", encoding='utf-8').write(
+            open(ga_fold + "/ga_rmsg.txt", "w", encoding='utf-8').write(
                 str(dumps(vars(msg.reply_to_message), indent=2, default=custom_serializer)))
-            open("ga/ga_rchat.txt", "w", encoding='utf-8').write(str(
+            open(ga_fold + "/ga_rchat.txt", "w", encoding='utf-8').write(str(
                 dumps(vars(await client.get_chat(msg.reply_to_message.chat.id)), indent=2, default=custom_serializer)))
         else:
-            open("ga/ga_rmsg.txt", "w", encoding='utf-8').write("")
-            open("ga/ga_rchat.txt", "w", encoding='utf-8').write("")
+            open(ga_fold + "/ga_rmsg.txt", "w", encoding='utf-8').write("")
+            open(ga_fold + "/ga_rchat.txt", "w", encoding='utf-8').write("")
         await client.send_message(chat_id=TERMINAL_ID, text=f"creati 4 file dal comando {PC}getAll\n"
                                                             f"per stamparli: {PC}pga o printga")
 
@@ -445,22 +585,7 @@ async def handle_commands(client: Client, msg: Msg):
 
     # region special
     elif check_cmd(cmd_txt, {'moon': 2, 'luna': 2}):
-        moon_list = ["🌕", "🌖", "🌗", "🌘", "🌑", "🌒", "🌓", "🌔"]
-        from asyncio import sleep, create_task
-        try:
-            sec = float(cmd_txt.split(" ")[1])
-        except:
-            sec = 0.1
-        if sec < 0.1:
-            sec = 0.1
-        for _ in range(30):
-            moon_list = moon_list[-1:] + moon_list[:-1]
-            text = ''.join(moon_list[:5]) + "ㅤ"
-            try:
-                _ = create_task(msg.edit_text(text))
-            except:
-                pass
-            await sleep(sec)
+        await moon(msg, cmd_txt, False)
 
     elif check_cmd(cmd_txt, {'strikethrough': 1, 'done': 1, 'v': 1}):
         rmsg = msg.reply_to_message
@@ -573,91 +698,10 @@ async def handle_commands_for_other(client: Client, msg: Msg):
             await msg.reply_text(text)
 
         elif check_cmd(cmd_txt, {'moon': 2, 'luna': 2}):
-            moon_list = ["🌕", "🌖", "🌗", "🌘", "🌑", "🌒", "🌓", "🌔"]
-            from asyncio import sleep, create_task
-            msg = await msg.reply_text("LUNA UAU")
-            try:
-                sec = float(cmd_txt.split(" ")[1])
-            except:
-                sec = 0.1
-            if sec < 0.1:
-                sec = 0.1
-            for _ in range(30):
-                moon_list = moon_list[-1:] + moon_list[:-1]
-                text = ''.join(moon_list[:5]) + "ㅤ"
-                try:
-                    _ = create_task(msg.edit_text(text))
-                except:
-                    pass
-                await sleep(sec)
+            await moon(msg, cmd_txt, True)
 
         elif check_cmd(cmd_txt, {'pipo': 2}):
-            try:
-                num = int(cmd_txt.split(" ")[1])
-            except:
-                import random
-                num = random.randint(0, 3)
-
-            match num:
-                case 0:
-                    text = ("..............\u2584\u2584 \u2584\n........\u2590\u2590\u2591\u2591\u2580\u2591\u2591"
-                            "\u2590\u2590\n..... \u2590\u2592\u2592\u2592\u2592\u2592\u2592\u2592\u2592\u2592\u258c"
-                            "\n...\u2590\u2592\u2592\u2592\u2592\u2592\u2592\u2592\u2592\u2592\u2592\u258c\n....\u2590"
-                            "\u2592\u2592\u2592\u2592\u2592\u2592\u2592\u2592\u2592\u2592\u258c\n....\u2590\u2580\u2584"
-                            "\u2584\u2584\u2584\u2584\u2584\u2584\u2584\u2580\u258c\n....\u2590\u2591\u2591\u2591\u2591"
-                            "\u2591\u2591\u2591\u2591\u2591\u2591\u258c\n....\u2590\u2591\u2591\u2591\u2591\u2591\u2591"
-                            "\u2591\u2591\u2591\u2591\u258c\n....\u2590\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591"
-                            "\u2591\u2591\u258c\n....\u2590\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591"
-                            "\u258c\n....\u2590\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u258c\n...."
-                            "\u2590\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u258c\n....\u2590\u2591"
-                            "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u258c\n....\u2590\u2591\u2591\u2591"
-                            "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u258c\n....\u2590\u2591\u2591\u2591\u2591\u2591"
-                            "\u2591\u2591\u2591\u2591\u2591\u258c\n....\u2590\u2591\u2591\u2591\u2591\u2591\u2591\u2591"
-                            "\u2591\u2591\u2591\u258c\n..\u2590.\u2580\u2592\u2592\u2592\u2592\u2592\u2592\u2592\u2592"
-                            "\u2592\u2592\u2580\u2590\n..\u2584\u2580\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591"
-                            "\u2591\u2591\u2591\u2591\u2580\u2584\n.\u2590\u2591\u2591\u2591\u2591\u2591\u2591\u2591"
-                            "\u2580\u2584\u2592\u2584\u2580\u2591\u2591\u2591\u2591\u258c\n\u2590\u2591\u2591\u2591"
-                            "\u2591\u2591\u2591\u2591\u2592\u2592\u2590\u2592\u2592\u2591\u2591\u2591\u2591\u2591"
-                            "\u258c\n\u2590\u2592\u2591\u2591\u2591\u2591\u2591\u2592\u2592\u2592\u2590\u2592\u2592"
-                            "\u2592\u2591\u2591\u2591\u2592\u258c\n.\u2580\u2584\u2592\u2592\u2592\u2592\u2592\u2584"
-                            "\u2580\u2592\u2580\u2584\u2592\u2592\u2592\u2592\u2584,")
-                case 1:
-                    text = ("\u28ff\u28ff\u28ff\u28ff\u28ff \u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u281f\u2820"
-                            "\u2870\u28d5\u28d7\u28f7\u28e7\u28c0\u28c5\u2818\u28ff\u28ff\u28ff\u28ff\u28ff \u28ff"
-                            "\u28ff\u28ff\u28ff\u28ff\u28ff\u2803\u28e0\u28f3\u28df\u28ff\u28ff\u28f7\u28ff\u287f"
-                            "\u28dc\u2804\u28ff\u28ff\u28ff\u28ff\u28ff \u28ff\u28ff\u28ff\u28ff\u287f\u2801\u2804"
-                            "\u28f3\u28b7\u28ff\u28ff\u28ff\u28ff\u287f\u28dd\u2816\u2804\u28ff\u28ff\u28ff\u28ff"
-                            "\u28ff \u28ff\u28ff\u28ff\u28ff\u2803\u2804\u28a2\u2879\u28ff\u28b7\u28ef\u28bf\u28b7"
-                            "\u286b\u28d7\u280d\u28b0\u28ff\u28ff\u28ff\u28ff\u28ff \u28ff\u28ff\u28ff\u284f\u2880"
-                            "\u2884\u2824\u28c1\u280b\u283f\u28d7\u28df\u286f\u284f\u288e\u2801\u28b8\u28ff\u28ff"
-                            "\u28ff\u28ff\u28ff \u28ff\u28ff\u28ff\u2804\u2894\u2895\u28ef\u28ff\u28ff\u2872\u2864"
-                            "\u2844\u2864\u2804\u2840\u28a0\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff \u28ff\u28ff\u2807"
-                            "\u2820\u2873\u28ef\u28ff\u28ff\u28fe\u28b5\u28eb\u288e\u288e\u2806\u2880\u28ff\u28ff"
-                            "\u28ff\u28ff\u28ff\u28ff\u28ff \u28ff\u28ff\u2804\u28a8\u28eb\u28ff\u28ff\u287f\u28ff"
-                            "\u28fb\u288e\u2857\u2855\u2845\u28b8\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff \u28ff"
-                            "\u28ff\u2804\u289c\u28be\u28fe\u28ff\u28ff\u28df\u28d7\u28af\u286a\u2873\u2840\u28b8"
-                            "\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff \u28ff\u28ff\u2804\u28b8\u28bd\u28ff\u28f7"
-                            "\u28ff\u28fb\u286e\u2867\u2873\u2871\u2841\u28b8\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff"
-                            " \u28ff\u28ff\u2844\u28a8\u28fb\u28fd\u28ff\u28df\u28ff\u28de\u28d7\u287d\u2878\u2850"
-                            "\u28b8\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff \u28ff\u28ff\u2847\u2880\u2897\u28ff"
-                            "\u28ff\u28ff\u28ff\u287f\u28de\u2875\u2863\u28ca\u28b8\u28ff\u28ff\u28ff\u28ff\u28ff"
-                            "\u28ff\u28ff \u28ff\u28ff\u28ff\u2840\u2863\u28d7\u28ff\u28ff\u28ff\u28ff\u28ef\u286f"
-                            "\u287a\u28fc\u280e\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff \u28ff\u28ff\u28ff\u28e7"
-                            "\u2810\u2875\u28fb\u28df\u28ef\u28ff\u28f7\u28df\u28dd\u289e\u287f\u28b9\u28ff\u28ff"
-                            "\u28ff\u28ff\u28ff\u28ff \u28ff\u28ff\u28ff\u28ff\u2846\u2898\u287a\u28fd\u28bf\u28fb"
-                            "\u28ff\u28d7\u2877\u28f9\u28a9\u2883\u28bf\u28ff\u28ff\u28ff\u28ff\u28ff \u28ff\u28ff"
-                            "\u28ff\u28ff\u28f7\u2804\u282a\u28ef\u28df\u28ff\u28af\u28ff\u28fb\u28dc\u288e\u2886\u281c\u28ff\u28ff\u28ff\u28ff\u28ff \u28ff\u28ff\u28ff\u28ff\u28ff\u2846\u2804\u28a3\u28fb\u28fd\u28ff\u28ff\u28df\u28fe\u286e\u287a\u2878\u2838\u28ff\u28ff\u28ff\u28ff \u28ff\u28ff\u287f\u281b\u2809\u2801\u2804\u2895\u2873\u28fd\u287e\u28ff\u28bd\u28ef\u287f\u28ee\u289a\u28c5\u2839\u28ff\u28ff\u28ff \u287f\u280b\u2804\u2804\u2804\u2804\u2880\u2812\u281d\u28de\u28bf\u287f\u28ff\u28fd\u28bf\u287d\u28e7\u28f3\u2845\u280c\u283b\u28ff \u2801\u2804\u2804\u2804\u2804\u2804\u2810\u2850\u2831\u2871\u28fb\u287b\u28dd\u28ee\u28df\u28ff\u28fb\u28f7\u28cf\u28fe")
-                case 2:
-                    text = ("\u28a0\u28de\u28fb\u28ff\u28f6\u28e4\u2840                   \n\u28b8\u28ff\u28ff\u28ff"
-                            "\u28ff\u28ff\u28ff\u28e6                  \n\u28b8\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff"
-                            "\u28ff\u2840                 \n \u28bb\u28ff\u28ff\u28ff\u28ff\u28ff\u28df\u28f5\u28e6\u2840               \n  \u2808\u2833\u28bf\u28fb\u28f5\u28ff\u28ff\u28ff\u28f7\u28c4              \n    \u2818\u28bf\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28f7\u28c4            \n      \u2839\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28f7\u28e6\u28c0         \n       \u2808\u283b\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28f6\u28e4\u28e4\u28e4\u2840   \n         \u2808\u283b\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u2846  \n           \u2808\u2819\u283f\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff  \n              \u2808\u2819\u283f\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u2847 \n               \u28e0\u28fe\u28f6\u28b9\u28ff\u28ff\u28ff\u28ff\u28ff\u28f7 \n              \u28f0\u28ff\u28ff\u284f\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u2847\n              \u28ff\u28ff\u28ff\u28b0\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28f7\n              \u281b\u283f\u283f\u2838\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u284f\n                  \u2819\u283f\u28ff\u28ff\u28ff\u287f\u281f")
-                case 3:
-                    text = ("....... \u2584\u2588\u2593\u2591\u2591\u2591\u2591\u2591\u2591\u2593\u2588\u2584\n...."
-                            "\u2584\u2580\u2591\u2591\u2590\u2591\u2591\u2591\u2591\u2591\u2591\u258c\u2591\u2592"
-                            "\u258c\n.\u2590\u2591\u2591\u2591\u2591\u2590\u2591\u2591\u2591\u2591\u2591\u2591\u258c\u2591\u2591\u2591\u258c\n\u2590 \u2591\u2591\u2591\u2591\u2590\u2591\u2591\u2591\u2591\u2591\u2591\u258c\u2591\u2591\u2591\u2590\n\u2590 \u2592\u2591\u2591\u2591 \u2590\u2591\u2591\u2591\u2591\u2591\u2591\u258c\u2591\u2592\u2592\u2590\n\u2590 \u2592\u2591\u2591\u2591\u2591\u2590\u2591\u2591\u2591\u2591\u2591\u2591\u258c\u2591\u2592\u2590\n..\u2580\u2584\u2592\u2592\u2592\u2592\u2590\u2591\u2591\u2591\u2591\u2591\u2591\u258c\u2584\u2580\n........ \u2580\u2580\u2580 \u2590\u2591\u2591\u2591\u2591\u2591\u2591\u258c\n.................\u2590\u2591\u2591\u2591\u2591\u2591\u2591\u258c\n.................\u2590\u2591\u2591\u2591\u2591\u2591\u2591\u258c\n.................\u2590\u2591\u2591\u2591\u2591\u2591\u2591\u258c\n.................\u2590\u2591\u2591\u2591\u2591\u2591\u2591\u258c\n.................\u2590\u2591\u2591\u2591\u2591\u2591\u2591\u258c\n................\u2590\u2584\u2580\u2580\u2580\u2580\u2580\u2584\u258c\n...............\u2590\u2592\u2592\u2592\u2592\u2592\u2592\u2592\u2592\u258c\n...............\u2590\u2592\u2592\u2592\u2592\u2592\u2592\u2592\u2592\u258c\n................\u2590\u2592\u2592\u2592\u2592\u2592\u2592\u2592\u258c\n..................\u2580\u258c\u2592\u2580\u2592\u2590\u2580")
-                case _:
-                    text = "error. i numeri disponibili sono: 0, 1, 2, 3"
-            await msg.reply(text)
+            await pipo(cmd_txt, msg)
 
         elif cmd_txt in ['null', 'vuoto', 'void', ' ', '', 'spazio', None]:
             await (msg.reply_to_message if msg.reply_to_message else msg).reply_text("ㅤ")
@@ -722,3 +766,46 @@ async def offline(client: Client, seconds: int, from_: str):
     await client.invoke(UpdateStatus(offline=True))  # 15s
     await sleep(seconds)
     await client.invoke(UpdateStatus(offline=True))  # 20s
+
+
+async def moon(m: Msg, txt: str, other: bool):
+    moon_list = ["🌕", "🌖", "🌗", "🌘", "🌑", "🌒", "🌓", "🌔"]
+    from asyncio import sleep, create_task
+    if other:
+        m = await m.reply_text("LUNA UAU")
+    try:
+        sec = float(txt.split(" ")[1])
+    except:
+        sec = 0.1
+    if sec < 0.1:
+        sec = 0.1
+    for _ in range(30):
+        moon_list = moon_list[-1:] + moon_list[:-1]
+        text = ''.join(moon_list[:5]) + "ㅤ"
+        try:
+            _ = create_task(m.edit_text(text))
+        except:
+            pass
+        await sleep(sec)
+
+
+async def pipo(txt: str, m: Msg):
+    try:
+        num = int(txt.split(" ")[1])
+    except:
+        import random
+        num = random.randint(0, 3)
+
+    from .myParameters import ASCII_ART
+    match num:
+        case 0:
+            text = ASCII_ART['pipo0']
+        case 1:
+            text = ASCII_ART['pipo1']
+        case 2:
+            text = ASCII_ART['pipo2']
+        case 3:
+            text = ASCII_ART['pipo3']
+        case _:
+            text = "error. i numeri disponibili sono: 0, 1, 2, 3"
+    await m.reply(text)
