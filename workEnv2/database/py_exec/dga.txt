@@ -1,8 +1,6 @@
 """
 dga.txt: delete files in database/ga/*
 """
-
 from os import remove, listdir
-
 for file in [f for f in listdir("./database/ga")]:
   remove("./database/ga/" + file)

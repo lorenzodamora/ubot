@@ -1,0 +1,11 @@
+"""
+test_ripetizione.txt: test per evitare il timeout
+"""
+async def fun(num, msg):
+ msg = await msg.reply("scrivo")
+ await asyncio.sleep(30)
+ if num != 10:
+   num += 1
+   await fun(num, msg)
+
+asyncio.create_task(fun(0, r))

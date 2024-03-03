@@ -1,0 +1,5 @@
+"""
+print all active task
+"""
+for i, task in enumerate(asyncio.all_tasks()):
+ print(f"indice {i}: {task}\n\n")

@@ -92,6 +92,8 @@ async def non_risposto(client: Client, chat_id):
         break
     if not isinstance(last_msg, Msg):
         print(f"file waiting.py | def non_risposto | il last_msg non è tipo Message | type: {type(last_msg)}")
+        print(f"\nlast_msg:{last_msg}\n\nchat_id: `{chat_id}`\n")
+        return
     # Verifica se l'ultimo messaggio è stato inviato da te
     # if True:
     if not last_msg.from_user.is_self:
@@ -124,8 +126,6 @@ async def non_risposto(client: Client, chat_id):
     _ = create_task(non_risposto(client, chat_id))
 
 
-# @Client.on_message(f.private & f.incoming & ~f.bot, group=3)
-# if is_pvt and incoming:
 async def benvenuto(client: Client, msg: Msg):
     # Ottieni il numero di messaggi nella chat
     chat_id = msg.chat.id
@@ -136,12 +136,9 @@ async def benvenuto(client: Client, msg: Msg):
         return
     
     if num_msg == 1:
-        from .handler import raw_lock, raw_msgs
-        async with raw_lock:
-            raw_msg = raw_msgs[msg.id][0]
         from pyrogram.raw.types import MessageService, MessageActionContactSignUp
-        if isinstance(raw_msg, MessageService):
-            if isinstance(raw_msg.action, MessageActionContactSignUp):
+        if isinstance(msg.raw, MessageService):
+            if isinstance(msg.raw.action, MessageActionContactSignUp):
                 await client.send_message(chat_id=chat_id, text="Benvenutə su telegram!")
 
     if num_msg > 2:
