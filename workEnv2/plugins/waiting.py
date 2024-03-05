@@ -8,7 +8,6 @@ from asyncio import Lock
 # Creare un lock globale per evitare concorrenza durante la scrittura del file
 lock_rw = Lock()
 
-
 # Dizionario per tenere traccia dello stato di risposta per ogni chat
 # chat id; tempo atteso
 # numerico; {1: un ora, 2: 8 ore, 3: 24 ore, 4: 36 ore, any: 48}

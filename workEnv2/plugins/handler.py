@@ -4,9 +4,10 @@ evito di usare i filter per evitare certi strani bug
 """
 from pyrogram import Client
 from pyrogram.types import Message as Msg, Chat, User
-from pyrogram.enums import ChatType
+from pyrogram.enums import ChatType, ParseMode
 from .myParameters import TERMINAL_ID, PREFIX_COMMAND as PC, PREFIX_SEND_TO as PS, MY_TAG
 from asyncio import create_task, Lock, sleep
+from typing import Union, Optional
 
 request_lock = Lock()
 commands = {
@@ -25,8 +26,8 @@ commands = {
     },
     'automatici': {
         'alias': ['auto'],
-        'type': 1,
-        'note': "\"uso i messaggi automatici perché..\"",
+        'type': 2,
+        'note': "\"uso i messaggi automatici perché..\"\n arg: 'e' for english version",
         'group': "fast"
     },
     'delete': {
@@ -62,7 +63,8 @@ commands = {
     'get msg id': {
         'alias': ['thisid', 'thisMsgId', 'MsgId'],
         'type': 2,
-        'note': "edit text with his id\n__{n?: int = 1}__ : send n message with id",
+        'note': "edit text with his id\n__{n?: int = 1}__ : send n message with id\nif have a reply it sends only the"
+                " id of that",
         'group': "get",
         'other': True
     },
@@ -93,7 +95,7 @@ commands = {
     'getid': {
         'alias': ['getid', 'id'],
         'type': 1,
-        'note': "get id of chat",
+        'note': "get id of chat or replyed user",
         'group': "get"
     },
     'getme': {
@@ -123,7 +125,7 @@ commands = {
     },
     'null': {
         'alias': ['null', 'vuoto', 'void', '', 'spazio', 'space'],
-        'type': 0,
+        'type': 1,
         'note': "sends the text with empty space, if you reply a message it keeps it",
         'group': "special",
         'other': True
@@ -186,7 +188,13 @@ commands = {
     'search': {
         'alias': ['search'],
         'type': 2,
-        'note': "search for id or username of reply (wip: arg)\nor see @tgdb_bot",
+        'note': "search for id or username",
+        'group': "get"
+    },
+    'search reply': {
+        'alias': ['rsearch'],
+        'type': 1,
+        'note': "search for id or username of reply",
         'group': "get"
     },
     'second profile': {
@@ -209,8 +217,8 @@ commands = {
     },
     'un attimo': {
         'alias': ['1'],
-        'type': 1,
-        'note': "\"Dammi un attimo\" + add to 'reply_waiting' list",
+        'type': 2,
+        'note': "\"Dammi un attimo\" + add to 'reply_waiting' list\n arg: 'e' for english version",
         'group': "fast"
     },
 }
@@ -289,11 +297,11 @@ async def event_handler(client: Client, m: Msg):
 
     ch: Chat = m.chat
     fr_u: User = m.from_user
-    c_type: ChatType = ch.type
-    pvt = ChatType.PRIVATE
-    is_pvt: bool = bool(m.chat and c_type == pvt)
+    # c_type: ChatType = ch.type
+    # pvt = ChatType.PRIVATE
+    is_pvt: bool = bool(m.chat and ch.type == ChatType.PRIVATE)
     incoming: bool = not m.outgoing  # chat:"me" = True
-    is_me: bool = bool(fr_u and fr_u.is_self or not incoming)
+    is_me: bool = bool(fr_u and fr_u.is_self or m.outgoing)
 
     # group -1
     if encode_valid:
@@ -336,20 +344,32 @@ async def handle_commands(client: Client, msg: Msg):
         await msg.edit_text(PC + msg.text[2:])
 
     elif check_cmd(cmd_txt, '?+'):
-        await client.send_message(
-            chat_id=TERMINAL_ID,
-            text=help_plus_text
-        )
+        await msg.delete()
+        await client.send_message(TERMINAL_ID, help_plus_text)
 
     elif check_cmd(cmd_txt, '?'):
         await msg.delete()
-        await client.send_message(chat_id=TERMINAL_ID, text=help_(cmd_txt_original))
+        await client.send_message(TERMINAL_ID, help_(cmd_txt_original))
     # endregion
 
     # region fast
     elif check_cmd(cmd_txt, 'automatici'):
-        await msg.edit("uso i messaggi automatici solo per far prima e poter gestire più persone,"
-                       "senza andare ad ignorare qualcuno involontariamente")
+        txts: list[str] = cmd_txt_original.split(maxsplit=1)
+        if len(txts) == 1:
+            text = ("uso i messaggi automatici solo per far prima e poter gestire più persone, "
+                    "senza andare ad ignorare qualcuno involontariamente")
+        elif txts[1] == 'e':
+            text = ("I use automatic messages just to save time and manage more people, "
+                    "without unintentionally ignoring anyone")
+        else:
+            await msg.delete()
+            c_id = msg.chat.id
+            await client.send_message(
+                chat_id=TERMINAL_ID,
+                text=f"! No lang found !\n{msg.text}\nchat:{c_id if c_id != TERMINAL_ID else 'this chat'}"
+            )
+            return
+        await msg.edit(text=text)
 
     elif check_cmd(cmd_txt, 'greetings'):
         txts: list[str] = cmd_txt_original.split(maxsplit=1)
@@ -370,7 +390,10 @@ async def handle_commands(client: Client, msg: Msg):
     elif check_cmd(cmd_txt, 'strikethrough'):
         rmsg = msg.reply_to_message
         await msg.delete()
-        if not rmsg and not rmsg.text and rmsg.from_user.is_self:
+        check = bool(rmsg)
+        if check:
+            check = bool(rmsg.text) and bool(rmsg.from_user.is_self)
+        if not check:
             await client.send_message(TERMINAL_ID, f"il comando {PC}done vuole un reply a un mio text msg")
             return
         try:
@@ -379,11 +402,10 @@ async def handle_commands(client: Client, msg: Msg):
             await client.send_message(TERMINAL_ID, f"errore in {msg.text}:\n{e}")
 
     elif check_cmd(cmd_txt, 'un attimo'):
-        from pyrogram.enums import ChatType as Ct
         chat_id = msg.chat.id
         await msg.edit("Dammi un attimo e ti scrivo subito.")
         _ = create_task(offline(client, 4, f"comando {PC}1"))
-        if msg.chat.type != Ct.PRIVATE:
+        if msg.chat.type != ChatType.PRIVATE:
             return
         from .waiting import check_chat_for_reply_waiting, non_risposto, lock_rw
         if not await check_chat_for_reply_waiting(chat_id):
@@ -394,6 +416,8 @@ async def handle_commands(client: Client, msg: Msg):
     # endregion
 
     # region get
+    # TODO possibile stop task
+    # TODO staccare funzione ciclo anti flood
     elif check_cmd(cmd_txt, 'get msg id'):
         rmsg = msg.reply_to_message
         if rmsg:
@@ -401,21 +425,21 @@ async def handle_commands(client: Client, msg: Msg):
             return
         try:
             n = int(cmd_txt.split(" ")[1])
-        except:
+        except (IndexError, ValueError):
             n = 1
-        await msg.edit_text(str(msg.id))
+        from pyrogram.errors.exceptions.flood_420 import FloodWait
+        await msg.edit_text(f"this msg id: `{msg.id}`")
         n -= 1
         for i in range(0, n):
             uncomplete = True
             while uncomplete:
                 try:
                     msg = await client.send_message(chat_id=msg.chat.id, text="thisid")
+                    await msg.edit_text(f"this msg id: `{msg.id}`")
                     uncomplete = False
-                    await msg.edit_text(str(msg.id))
-                except:
-                    await sleep(10)
+                except FloodWait:
+                    await sleep(5)
 
-    # TODO parameters
     elif check_cmd(cmd_txt, 'getall'):
         await msg.delete()
         # Crea la directory se non esiste già
@@ -425,30 +449,25 @@ async def handle_commands(client: Client, msg: Msg):
         if not exists(ga_fold):
             makedirs(ga_fold)
 
-        def custom_serializer(obj):
-            if isinstance(obj, Client):
-                return str(obj)
+        from pprint import PrettyPrinter
+        pp = PrettyPrinter(indent=2)
 
-        from json import dumps
-        open(ga_fold + "/ga_msg.txt", "w", encoding='utf-8').write(
-            str(dumps(vars(msg), indent=2, default=custom_serializer)))
+        open(ga_fold + "/ga_msg.txt", "w", encoding='utf-8').write(pp.pformat(vars(msg)))
         open(ga_fold + "/ga_chat.txt", "w", encoding='utf-8').write(
-            str(dumps(vars(await client.get_chat(msg.chat.id)), indent=2, default=custom_serializer)))
+            pp.pformat(vars(await client.get_chat(msg.chat.id))))
         if msg.reply_to_message:
-            open(ga_fold + "/ga_rmsg.txt", "w", encoding='utf-8').write(
-                str(dumps(vars(msg.reply_to_message), indent=2, default=custom_serializer)))
-            open(ga_fold + "/ga_rchat.txt", "w", encoding='utf-8').write(str(
-                dumps(vars(await client.get_chat(msg.reply_to_message.chat.id)), indent=2, default=custom_serializer)))
+            open(ga_fold + "/ga_rmsg.txt", "w", encoding='utf-8').write(pp.pformat(vars(msg.reply_to_message)))
+            open(ga_fold + "/ga_rchat.txt", "w", encoding='utf-8').write(
+                pp.pformat(vars(await client.get_chat(msg.reply_to_message.chat.id))))
         else:
-            open(ga_fold + "/ga_rmsg.txt", "w", encoding='utf-8').write("")
-            open(ga_fold + "/ga_rchat.txt", "w", encoding='utf-8').write("")
+            open(ga_fold + "/ga_rmsg.txt", "w", encoding='utf-8').truncate()
+            open(ga_fold + "/ga_rchat.txt", "w", encoding='utf-8').truncate()
         await client.send_message(chat_id=TERMINAL_ID, text=f"creati 4 file dal comando {PC}getAll\n"
                                                             f"per stamparli: {PC}pga o printga")
 
     elif check_cmd(cmd_txt, 'getchat'):
-        c_id: int = msg.chat.id
-        await client.delete_messages(chat_id=c_id, message_ids=msg.id)
-        await getchat(client, await client.get_chat(c_id))
+        await msg.delete()
+        await getchat(client, await client.get_chat(msg.chat.id))
 
     elif check_cmd(cmd_txt, 'getchat reply'):
         await msg.delete()
@@ -461,84 +480,97 @@ async def handle_commands(client: Client, msg: Msg):
         await getchat(client, await client.get_chat(rmsg.chat.id))
 
     elif check_cmd(cmd_txt, 'getid'):
-        id_ = msg.reply_to_message.from_user.id if msg.reply_to_message else msg.chat.id
         await msg.delete()
-        await client.send_message(chat_id=TERMINAL_ID, text=str(id_))
+        id_ = msg.reply_to_message.from_user.id if msg.reply_to_message else msg.chat.id
+        await client.send_message(TERMINAL_ID, f"`{id_}`")
 
-    # TODO get full user
     elif check_cmd(cmd_txt, 'getme'):
         await msg.delete()
+        from pprint import PrettyPrinter
+        from pyrogram.raw.functions.users import GetFullUser
+        from pyrogram.raw.types import InputUserSelf
 
-        def custom_serializer(obj):
-            if isinstance(obj, Client):
-                return str(obj)
-
-        from json import dumps
-        text = str(dumps(vars(await client.get_me()), indent=2, default=custom_serializer))
-        await client.send_message(chat_id=TERMINAL_ID, text='\n\''.join(text))
+        await client.send_message(TERMINAL_ID,
+                                  f"client.get_me():\n```\n{PrettyPrinter(indent=2).pformat(vars(
+                                      await client.get_me()))}\n```")
+        await client.send_message(TERMINAL_ID,
+                                  f"GetFullUser:\n```\n{PrettyPrinter(indent=2).pformat(
+                                      await client.invoke(GetFullUser(id=InputUserSelf())))}\n```")
+        await client.send_message(TERMINAL_ID,
+                                  f"client.me:\n```\n{PrettyPrinter(indent=2).pformat(client.me)}\n```")
 
     elif check_cmd(cmd_txt, 'gets'):
+        await msg.delete()
         msg.text = PC + ('getr' if msg.reply_to_message else 'getchat')
         await handle_commands(client, msg)
 
-    # TODO parametro
     elif check_cmd(cmd_txt, 'search'):
         await msg.delete()
-        # Verifica se il messaggio ha una risposta
-        rmsg = msg.reply_to_message
-        if not rmsg:
-            await client.send_message(chat_id=TERMINAL_ID, text=f"nessun reply per il comando {PC}search")
+        txts: list[str] = cmd_txt_original.split(maxsplit=1)
+        if len(txts) == 1:
+            await client.send_message(TERMINAL_ID, f"query missing for `{PC}search`")
             return
         try:
-            chat = await client.get_chat(rmsg.text)
-            await getchat(client, chat)
+            await getchat(client, await client.get_chat(txts[1]))
         except Exception as e:
-            await client.send_message(chat_id=TERMINAL_ID, text=f"{e}\n\nil comando cerca per id o per username",
-                                      parse_mode=ps)
+            await client.send_message(TERMINAL_ID,
+                                      f"{e}\n\n`{msg.text}`:\nil comando cerca per id o per username", parse_mode=ps)
+
+    elif check_cmd(cmd_txt, 'search reply'):
+        await msg.delete()
+        rmsg = msg.reply_to_message
+        if not rmsg:
+            await client.send_message(TERMINAL_ID, f"nessun reply per il comando `{PC}rsearch`")
+            return
+        try:
+            await getchat(client, await client.get_chat(rmsg.text))
+        except Exception as e:
+            await client.send_message(TERMINAL_ID, f"{e}\n\nil comando cerca per id o per username", parse_mode=ps)
     # endregion
 
     # region print
+    # TODO staccare funzione ciclo anti flood
+    # TODO staccare funzione printoutput
     elif check_cmd(cmd_txt, 'getall print'):
-        from pyrogram.enums import ParseMode
-        from os.path import exists
-        ps = ParseMode.DISABLED
         await msg.delete()
+        from os.path import exists
+        from os import listdir
 
         async def printoutput(path: str):
-            from pyrogram.errors.exceptions.flood_420 import FloodWait
             if not exists(path):
                 await client.send_message(chat_id=TERMINAL_ID, text=f"il file {path} non esiste", parse_mode=ps)
                 return
-            txt = open(path, "r").read()
+            txt = open(path, "r", encoding='utf-8').read()
             if txt == "":
                 txt = f"{path[12:]}: \n\nfile vuoto"
             else:
-                txt = f"{path[12:]}: \n\n" + txt
-            chunk__s = 4096
+                txt = f"{path[12:]}: \n\n{txt}"
+            await send_long_message(client, txt, chunk_start="```\n", chunk_end="\n```")
+            """
+            chunk__s = 4088
             chunks__ = [txt[it:it + chunk__s] for it in range(0, len(txt), chunk__s)]
 
             for chunk__ in chunks__:
                 un_complet = True
                 while un_complet:
                     try:
-                        await client.send_message(chat_id=TERMINAL_ID, text=str(chunk__), parse_mode=ps)
+                        await client.send_message(chat_id=TERMINAL_ID, text=f"```\n{chunk__}\n```")
                         un_complet = False
                     except FloodWait:
                         await sleep(20)
                 # end while
             # end for
+            """
 
         # End def
-        from os import listdir
         for file in [f for f in listdir("./database/ga")]:
             await printoutput(f"database/ga/{file}")
         await client.send_message(chat_id=TERMINAL_ID, text="end print")
 
     # TODO parametri
+    # TODO staccare funzione printoutput
     elif check_cmd(cmd_txt, 'output'):
-        from pyrogram.enums import ParseMode
         from platform import system
-        ps = ParseMode.DISABLED
         await msg.delete()
 
         async def printoutput(path: str, title: str):
@@ -573,14 +605,17 @@ async def handle_commands(client: Client, msg: Msg):
             import os
 
             # Filtra solo i file di collegamento
-            shortcut_files = [file for file in os.listdir(all_output) if os.path.islink(os.path.join(all_output, file))]
+            shortcut_files = [
+                file for file in os.listdir(all_output) if os.path.islink(os.path.join(all_output, file))
+            ]
             # Itera sui file di collegamento
             for shortcut_file in shortcut_files:
                 percorso_collegamento = os.path.join(all_output, shortcut_file)
                 percorso_file = os.path.realpath(percorso_collegamento)
-
                 await printoutput(percorso_file, shortcut_file)
 
+    # TODO staccare funzione ciclo anti flood
+    # TODO staccare funzione printoutput
     elif check_cmd(cmd_txt, 'print exec'):
         from pyrogram.errors.exceptions.flood_420 import FloodWait
         rpath = "database/result.txt" if cmd_txt == 'pr' else "database/traceback.txt"
@@ -868,27 +903,27 @@ async def handle_commands_for_other(client: Client, msg: Msg):
         await sleep(20)
 
 
+# TODO add ciclo anti flood
 async def getchat(client: Client, chat: Chat):
-    from pyrogram.enums import ChatType as Ct
-    text = f"id:{chat.id}\ntype:{chat.type}\ntitle:{chat.title}\nusername:{chat.username}\nname:{chat.first_name}"
-    text += f", {chat.last_name}\n" if chat.last_name is not None else '\n'
-    if chat.type in [Ct.GROUP, Ct.SUPERGROUP]:
-        text += (f"inviteLink:{chat.invite_link}\nmembri:{chat.members_count}\n"
-                 f"description:{chat.description}\n")
-    elif chat.type == Ct.PRIVATE:
-        text += f"bio:{chat.bio}\n"
-        text += f"phone:{getattr(chat, 'phone_number', 'non presente')}\n"
-        text += f"restrictions:{getattr(chat, 'restrictions', 'non presente')}\n\n"
-    await client.send_message(chat_id=TERMINAL_ID, text=text)
-    if chat.type != Ct.PRIVATE:
+    text = (
+        f"id:`{chat.id}`\ntype:{chat.type}\ntitle:{chat.title}\nusername:{chat.username}\nname:{chat.first_name}, "
+        f"{chat.last_name}\n" if chat.last_name is not None else '\n'
+    )
+    if chat.type in [ChatType.GROUP, ChatType.SUPERGROUP]:
+        text += f"inviteLink:{chat.invite_link}\nmembri:{chat.members_count}\ndescription:\n{chat.description}\n\n"
+    elif chat.type == ChatType.PRIVATE:
+        text += (f"bio:{chat.bio}\nphone:{getattr(chat, 'phone_number', '\\')}\n"
+                 f"restrictions:{getattr(chat, 'restrictions', '\\')}\n\n")
+    await client.send_message(TERMINAL_ID, text)
+    if chat.type != ChatType.PRIVATE:
         return
     text = f"common chats:\n\n"
     chatlist = await client.get_common_chats(chat.id)
     for ch in chatlist:
-        text += f"id:{ch.id}\ntype:{ch.type}\ntitle:{ch.title}\nusername:{ch.username}\nname:{ch.first_name}"
+        text += f"id:`{ch.id}`\ntype:{ch.type}\ntitle:{ch.title}\nusername:{ch.username}\nname:{ch.first_name}"
         text += f", {ch.last_name}\n" if ch.last_name is not None else '\n'
         text += f"inviteLink:{ch.invite_link}\nmembri:{ch.members_count}\ndescription:{ch.description}\n\n"
-    await client.send_message(chat_id=TERMINAL_ID, text=text)
+    await client.send_message(TERMINAL_ID, text)
 
 
 async def pong(client: Client, msg: Msg, send_terminal=False):
@@ -1051,3 +1086,25 @@ def help_(cmd_text):
             text += h_format_group(group, cmd_info)
 
     return text
+
+
+async def send_long_message(
+    c: Client, text: str, chat_id: Union[int, str] = TERMINAL_ID,
+    parse_mode: Optional["ParseMode"] = None, chunk_size: int = 4096, chunk_start: str = "", chunk_end: str = ""
+                            ):
+    chunk_size -= len(chunk_start) + len(chunk_end)
+    from pyrogram.errors.exceptions.flood_420 import FloodWait
+
+    chunks = [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
+    flood_wait_counter = 0
+    for chunk in chunks:
+        chunk = chunk_start + chunk + chunk_end
+        uncomplete = True
+        while uncomplete:
+            try:
+                await c.send_message(chat_id, str(chunk), parse_mode=parse_mode)
+                uncomplete = False
+            except FloodWait as e:
+                print(f"send_long_message:\n\n{e}")
+                flood_wait_counter += 4
+                await sleep(flood_wait_counter)
