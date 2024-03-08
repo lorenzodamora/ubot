@@ -1,15 +1,26 @@
 """
 parametri globali
 """
-# from platform import system
-# print(f"System: {system()}")
-# if system() == "Windows":
-ubot1_output = "../output.txt"
-ubot2_output = "../output.txt"
-infobot_output = "../../infobot/mazzobot/output.txt"
-meteo_output = "../../meteoATbot/output.txt"
-# elif system() == "Linux":
-all_output = "/home/ubuntu/Magnus/PycharmProj/output_dir/"
+botlist = {
+    'Ubot1': {
+        # linux, windows
+        'paths': ['/home/ubuntu/Magnus/PycharmProj/ubot/output.txt', '../output.txt'],
+        'id': 1
+    },
+    'Ubot2': {
+        'paths': ['/home/ubuntu/Magnus/PycharmProj/ubot2/output.txt', '../output.txt'],
+        'id': 2
+    },
+    'Infobot': {
+        'paths': ['/home/ubuntu/Magnus/PycharmProj/infobot/output.txt', '../../infobot/mazzobot/output.txt'],
+        'id': 3
+    },
+    'MeteoATbot': {
+        'paths': ['/home/ubuntu/Magnus/PycharmProj/persone/Adora/meteobot/output.txt', '../../meteoATbot/output.txt'],
+        'id': 4
+    }
+}
+# all_output = "/home/ubuntu/Magnus/PycharmProj/output_dir/"
 MY_ID = 1259233812
 MY_TAG = '@ill_lore'
 MY_ID2 = 649363031

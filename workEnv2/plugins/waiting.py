@@ -18,7 +18,7 @@ async def check_chat_for_reply_waiting(chat_id) -> bool:
     """ bool invertito """
     # Acquisire il lock prima di accedere al file
     async with lock_rw:
-        for line in open('reply_waiting.txt', 'r'):
+        for line in open('database/reply_waiting.txt', 'r'):
             # Dividi la linea usando il punto e virgola come separatore
             parts = line.strip().split(';')
 
@@ -32,7 +32,7 @@ async def non_risposto(client: Client, chat_id):
     async def get_tempo_atteso() -> int:
         # Acquisire il lock prima di accedere al file
         async with lock_rw:
-            for line_ in open('reply_waiting.txt', 'r'):
+            for line_ in open('database/reply_waiting.txt', 'r'):
                 parts_ = line_.strip().split(';')
                 # Controlla se il primo elemento (chat_id) è uguale a quello che stai cercando
                 if parts_[0] == str(chat_id):
@@ -105,7 +105,7 @@ async def non_risposto(client: Client, chat_id):
         _ = create_task(offline(client, 2, "def: non_risposto; messaggio automatico"))
 
     async with lock_rw:
-        with open("reply_waiting.txt", 'r+') as rwf:
+        with open("database/reply_waiting.txt", 'r+') as rwf:
             lines = rwf.readlines()
             rwf.seek(0)  # Posizionati all'inizio del file
 
@@ -154,13 +154,13 @@ async def benvenuto(client: Client, msg: Msg):
     if not await check_chat_for_reply_waiting(chat_id):  # false se è presente
         return
     async with lock_rw:
-        open('reply_waiting.txt', 'a').write(f"{chat_id};1\n")
+        open('database/reply_waiting.txt', 'a').write(f"{chat_id};1\n")
     await non_risposto(client, chat_id)
 
 
 async def remove_rw(chat_id: str):
     async with lock_rw:
-        with open("reply_waiting.txt", 'r+') as rwf:
+        with open("database/reply_waiting.txt", 'r+') as rwf:
             lines = rwf.readlines()
             rwf.seek(0)  # Posizionati all'inizio del file
 

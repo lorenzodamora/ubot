@@ -1,4 +1,1 @@
-"""
-test.txt: test exec
-"""
-p("hi")
+cts("e")

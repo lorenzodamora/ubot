@@ -293,3 +293,80 @@
             await client.send_message(chat_id=TERMINAL_ID, text=f"comando {msg.text}\n"
                                                                 f"Errore:\n{e}\n{e.with_traceback(None)}")
         '''
+
+"""
+import asyncio
+
+
+# Assuming you have the task number stored in a variable called task_number
+async def print_atask():
+    tasks = asyncio.all_tasks()
+    for task in tasks:
+        print(task)
+
+
+async def onetask(name):
+    await asyncio.sleep(1)
+    print("wake up " + name)
+
+
+async def cancel_task_by_name(name: str):
+    tasks = asyncio.all_tasks()
+    for task in tasks:
+        if task.get_name() == name:
+            task.cancel()
+            return True
+    return False
+
+
+async def main():
+    task1 = asyncio.create_task(onetask("1"), name="1")
+    _ = asyncio.create_task(onetask("2"), name="2")
+    await print_atask()
+    print(await cancel_task_by_name("2"))
+    await task1
+
+if __name__ == "__main__":
+    from platform import python_version_tuple
+    if python_version_tuple() >= ("3", "11"):
+        with asyncio.Runner() as runner:
+            runner.get_loop().run_until_complete(main())
+"""
+
+                """
+                from .myParameters import all_output
+                import os
+
+                # Filtra solo i file di collegamento
+                shortcut_files = [file for file in os.listdir(all_output)
+                                  if os.path.islink(os.path.join(all_output, file))]
+                # Itera sui file di collegamento
+                for shortcut_file in shortcut_files:
+                    percorso_collegamento = os.path.join(all_output, shortcut_file)
+                    percorso_file = os.path.realpath(percorso_collegamento)
+                    await printoutput(percorso_file, shortcut_file)
+                """
+
+        '''
+    elif check_cmd(cmd_txt, {'genera': 2}):
+        txt = msg.text[8:]
+        pri = ''
+        for c in txt:
+            pri += c
+            try:
+                await msg.edit_text(pri)
+            except:
+                pass
+        '''
+
+"""
+async def anti_flood_cycle(c: Client, text: str, chat_id: Union[int, str], parse_mode: Optional["ParseMode"]):
+    from pyrogram.errors.exceptions.flood_420 import FloodWait
+    uncomplete = True
+    while uncomplete:
+        try:
+            await c.send_message(chat_id, str(text), parse_mode=parse_mode)
+            uncomplete = False
+        except FloodWait as e:
+            await sleep(e.value)
+"""

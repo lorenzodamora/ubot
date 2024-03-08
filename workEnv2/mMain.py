@@ -13,7 +13,7 @@ t_phone = "numero di telefono"
 
 pb = Pushbullet(pushKey)
 plugins = dict(root="plugins")
-open("reply_waiting.txt", 'w').truncate()
+open("database/reply_waiting.txt", 'w').close()
 title = "Ubot2"
 
 
@@ -36,6 +36,7 @@ async def main(dev=False):
 
     await app.start()
     await app.send_message(chat_id=TID, text="Ready")
+
     if not dev:
         pb.push_note(title, "Ready")
     else:
