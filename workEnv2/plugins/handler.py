@@ -276,7 +276,7 @@ def check_cmd(txt: str, name: str) -> bool:
                 if txt == alias:
                     return True
             case 2:
-                if (txt + " ").startswith((alias + " ")):
+                if (txt[:len(alias) + 1] + " ").startswith((alias + " ")):
                     return True
             case 3:
                 if alias in txt:
