@@ -442,9 +442,9 @@ async def handle_commands(c: Client, m: Msg):
         txts = cmd_txt.split(maxsplit=1)
         if len(txts) == 2:
             if txts[1] in ['h', '?']:
-                from .code_runner import pre_exec
+                from .code_runner import PRE_EXEC
                 await m.edit(f"`{PC}eval ` pre exec code is:\n\n"
-                             f"<pre language=\"python\">{pre_exec}</pre>\nfirst line:{pre_exec.count('\n') + 2}")
+                             f"<pre language=\"python\">{PRE_EXEC}</pre>\nfirst line:{PRE_EXEC.count('\n') + 2}")
                 return
         from .code_runner import python_exec
         task = create_task_name(python_exec(c, m), f'exec{m.date.second}')

@@ -11,12 +11,12 @@ from traceback import print_exc
 from pyrogram import Client, types, enums
 from .myParameters import PREFIX_COMMAND, RESULT_PATH, TRACEBACK_PATH
 
-pre_exec = ("async def __todo(client, msg, *args):\n"
-            " from .tasker import cancel_tasks_by_name as ctn, cancel_tasks_by_start as cts\n"
-            " # ctn and cts return the count of task cancelled\n"
-            " from .tasker import read_all_my_tasks as rat\n"
-            " at = rat()\n"
-            " app = client\n"
+PRE_EXEC = ("async def __todo(client, msg, *args):\n"
+            " from .tasker import cancel_tasks_by_name as ctn, cancel_tasks_by_start as cts, "
+            "cancel_tasks_by_end as cte, read_all_my_tasks as rat\n"
+            " # ctn  cts  cte  auto-print the count of task cancelled\n"
+            " at: str = rat()  # all task, rat(True) to auto-print\n"
+            " c = client\n"
             " m = msg\n"
             " r = m.reply_to_message\n"
             " u = m.from_user\n"
@@ -28,7 +28,7 @@ pre_exec = ("async def __todo(client, msg, *args):\n"
 
 async def aexec(code, *args, timeout=None):
     exec(
-        pre_exec
+        PRE_EXEC
         + "".join(f"\n {_l}" for _l in code.split("\n"))
     )
 
