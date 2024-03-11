@@ -1,7 +1,7 @@
 from openai import OpenAI, RateLimitError
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message as Msg
-from .utils.db import db
+from ..plugins.utils.db import db
 
 
 # @Client.on_message(command(["gpt", "rgpt"]) & filters.me & ~filters.forwarded & ~filters.scheduled)

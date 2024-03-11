@@ -3,7 +3,12 @@ gestisce la reply waiting logic e il benvenuto
 """
 from pyrogram import Client
 from pyrogram.types import Message as Msg
-from asyncio import Lock
+from pyrogram.errors.exceptions.flood_420 import FloodWait
+from pyrogram.raw.types import MessageService, MessageActionContactSignUp
+from asyncio import Lock, sleep
+from .myParameters import RW_PATH, WELCOME_MSG, TERMINAL_ID, PREFIX_COMMAND as PC
+from .functions import offline
+from .tasker import create_task_name
 
 # Creare un lock globale per evitare concorrenza durante la scrittura del file
 lock_rw = Lock()
@@ -18,7 +23,7 @@ async def check_chat_for_reply_waiting(chat_id) -> bool:
     """ bool invertito """
     # Acquisire il lock prima di accedere al file
     async with lock_rw:
-        for line in open('database/reply_waiting.txt', 'r'):
+        for line in open(RW_PATH, 'r'):
             # Dividi la linea usando il punto e virgola come separatore
             parts = line.strip().split(';')
 
@@ -32,7 +37,7 @@ async def non_risposto(client: Client, chat_id):
     async def get_tempo_atteso() -> int:
         # Acquisire il lock prima di accedere al file
         async with lock_rw:
-            for line_ in open('database/reply_waiting.txt', 'r'):
+            for line_ in open(RW_PATH, 'r'):
                 parts_ = line_.strip().split(';')
                 # Controlla se il primo elemento (chat_id) è uguale a quello che stai cercando
                 if parts_[0] == str(chat_id):
@@ -58,12 +63,6 @@ async def non_risposto(client: Client, chat_id):
             case _:
                 return 48
 
-    '''
-    def get_ore_attese_t(tempo_atteso: int) -> int:
-        return tempo_atteso**2
-    '''
-    # end def
-    from asyncio import sleep, create_task
     ore_attese = await get_ore_attese_id()
     tempo_atteso = await get_tempo_atteso()
     if ore_attese is None or tempo_atteso is None:
@@ -71,10 +70,7 @@ async def non_risposto(client: Client, chat_id):
     time = ore_attese * 60 * 60 - get_ore_attese_t(tempo_atteso-1) * 60 * 60
     # time = ore_attese - get_ore_attese_t(tempo_atteso - 1)
     if time == 0:
-        from .myParameters import TERMINAL_ID, PREFIX_COMMAND as PC
-        await client.send_message(chat_id=TERMINAL_ID, text=f"una persona ha aspettato più di 48 ore."
-                                                            f"id:\n(fare {PC}search in reply)")
-        await client.send_message(chat_id=TERMINAL_ID, text=str(chat_id))
+        await client.send_message(TERMINAL_ID, f"una persona ha aspettato più di 48 ore.\n`{PC}search {chat_id}`")
         return
 
     await sleep(time)  # un ora = 3600 secondi
@@ -84,8 +80,7 @@ async def non_risposto(client: Client, chat_id):
         return
 
     await sleep(1)
-    from typing import Union
-    last_msg: Union[None, Msg] = None
+    last_msg = None
     # Ottieni la cronologia della chat (ultimi 1 messaggi)
     async for last_msg in client.get_chat_history(chat_id, limit=1):
         break
@@ -97,15 +92,18 @@ async def non_risposto(client: Client, chat_id):
     # if True:
     if not last_msg.from_user.is_self:
         ore_attese = await get_ore_attese_id()
-        await client.send_message(chat_id=chat_id,
-                                  text="! Messaggio automatico !\n"
-                                       f"Chiedo Scusa se non ti ho ancora risposto nelle ultime {ore_attese} ore"
-                                       f".\nTi contatterò appena mi è possibile.")
-        from .handler import offline
-        _ = create_task(offline(client, 2, "def: non_risposto; messaggio automatico"))
+        await client.send_message(chat_id,
+                                  "! Messaggio automatico !\n"
+                                  f"Chiedo Scusa se non ti ho ancora risposto nelle ultime {ore_attese} ore.\n"
+                                  "Ti contatterò appena mi è possibile."
+                                  )
+        _ = create_task_name(
+            offline(client, 2, 2, f"def: non_risposto; messaggio automatico id:`{chat_id}`"),
+            name=f"offline sorry id:{chat_id}"
+        )
 
     async with lock_rw:
-        with open("database/reply_waiting.txt", 'r+') as rwf:
+        with open(RW_PATH, 'r+') as rwf:
             lines = rwf.readlines()
             rwf.seek(0)  # Posizionati all'inizio del file
 
@@ -122,25 +120,21 @@ async def non_risposto(client: Client, chat_id):
 
             # Tronca il file per eliminare eventuali caratteri extra se il nuovo contenuto è più corto del vecchio
             rwf.truncate()
-    _ = create_task(non_risposto(client, chat_id))
+    _ = create_task_name(non_risposto(client, chat_id), name=f"non_risposto id:{chat_id}")
 
 
 async def benvenuto(client: Client, msg: Msg):
     # Ottieni il numero di messaggi nella chat
     chat_id = msg.chat.id
-    from pyrogram.errors.exceptions.flood_420 import FloodWait
     try:
-        num_msg: int = await client.get_chat_history_count(chat_id=chat_id)
+        num_msg: int = await client.get_chat_history_count(chat_id)
     except FloodWait:
         return
     
     if num_msg == 1:
-        from pyrogram.raw.types import MessageService, MessageActionContactSignUp
         if isinstance(msg.raw, MessageService):
             if isinstance(msg.raw.action, MessageActionContactSignUp):
-                await client.send_message(chat_id=chat_id,
-                                          text="Benvenutə su telegram! Se hai bisogno di una guida oppure semplicemente"
-                                               " abituarti a telegram conversiamo volentieri!")
+                await client.send_message(chat_id, "Benvenutə su telegram!")
 
     if num_msg > 2:
         return
@@ -148,19 +142,18 @@ async def benvenuto(client: Client, msg: Msg):
     async for hmsg in client.get_chat_history(chat_id):
         if hmsg.from_user.is_self:
             return
-    from .myParameters import AUTO_MSG
     # client.send_message(chat_id=message.chat.id, text="num_msg : " + str(num_messaggi))
-    await client.send_message(chat_id=chat_id, text=AUTO_MSG)
+    await client.send_message(chat_id, WELCOME_MSG)
     if not await check_chat_for_reply_waiting(chat_id):  # false se è presente
         return
     async with lock_rw:
-        open('database/reply_waiting.txt', 'a').write(f"{chat_id};1\n")
+        open(RW_PATH, 'a').write(f"{chat_id};1\n")
     await non_risposto(client, chat_id)
 
 
 async def remove_rw(chat_id: str):
     async with lock_rw:
-        with open("database/reply_waiting.txt", 'r+') as rwf:
+        with open(RW_PATH, 'r+') as rwf:
             lines = rwf.readlines()
             rwf.seek(0)  # Posizionati all'inizio del file
 

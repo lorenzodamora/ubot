@@ -1,7 +1,7 @@
 """
 parametri globali
 """
-botlist = {
+BOTLIST = {
     'Ubot1': {
         # linux, windows
         'paths': ['/home/ubuntu/Magnus/PycharmProj/ubot/output.txt', '../output.txt'],
@@ -20,23 +20,14 @@ botlist = {
         'id': 4
     }
 }
-# all_output = "/home/ubuntu/Magnus/PycharmProj/output_dir/"
-MY_ID = 649363031
-MY_TAG = '@ill_magnus'
-MY_ID2 = 1259233812
-# terminal_id = -4030133781
-TERMINAL_ID = -1001995530063  # update to supergroup
-# Forum: Saved Message > Topic:Pic
-SAVED_MESSAGE_FORUM_ID = -1001971247646
-PIC_TOPIC_ID = 18
-PREFIX_COMMAND = ','
-PREFIX_SEND_TO = '>'
-AUTO_MSG = "Ti ringrazio di avermi contattato, ti risponderò appena possibile."
-'''
-AUTO_MSG = ("! messaggio automatico !\n"
-             "Ti ringrazio di avermi contattato, ti risponderò appena possibile.\n"
-             "Chiedo Scusa in anticipo per il tempo che potrei metterci, ma siete in tantissimi!")
-'''
+MY_ID, MY_ID2 = 649363031, 1259233812
+MY_TAG, MY_TAG2 = '@Ill_Magnus', '@ill_lore'
+TERMINAL_ID = -1001995530063
+SAVED_MESSAGE_FORUM_ID, PIC_TOPIC_ID = -1001971247646, 18  # Forum: Saved Message > Topic:Pic
+PREFIX_COMMAND, PREFIX_SEND_TO = ',', '>'
+WELCOME_MSG, WELCOME_MSG1 = "Ti ringrazio di avermi contattato, ti risponderò appena possibile.", (
+    "! messaggio automatico !\nTi ringrazio di avermi contattato, ti risponderò appena possibile.\n"
+    "Chiedo Scusa in anticipo per il tempo che potrei metterci, ma siete in tantissimi!")
 ASCII_ART = {
     'pipo0':
         "..............\u2584\u2584 \u2584\n........\u2590\u2590\u2591\u2591\u2580\u2591\u2591"
@@ -124,3 +115,244 @@ ASCII_ART = {
         "..................\u2580\u258c\u2592\u2580\u2592\u2590\u2580",
     'null': ''
 }
+RW_PATH, RESULT_PATH, TRACEBACK_PATH, PY_EXEC_FOLD, GA_FOLD = (
+    'database/reply_wait.txt', 'database/result.txt', 'database/traceback.txt', 'database/py_exec', 'database/ga'
+)
+COMMANDS = {
+    '?': {
+        'alias': ['h', 'help', '?', 'commands', 'c'],
+        'type': 2,
+        'note': "see help menu",
+        'group': "generic",
+        'other': True
+    },
+    '?+': {
+        'alias': ['h+', 'help+', '?+', 'commands+', 'c+'],
+        'type': 1,
+        'note': "see extra help info",
+        'group': "generic",
+    },
+    'automatici': {
+        'alias': ['auto'],
+        'type': 2,
+        'note': "\"uso i messaggi automatici perché..\"\n__{c?: char}__ : 'e' for english version",
+        'group': "fast"
+    },
+    'delete': {
+        'alias': ['del', 'd'],
+        'type': 2,
+        'note': "delete msg starting from reply or last before this\n"
+                "__{n?: int = 1}__ : num of msgs to delete, max:100",
+        'group': "service-cmd"
+    },
+    'eval': {
+        'alias': ['eval', 'exec'],
+        'type': 2,
+        'note': "`eval h` / `exec ?` to see this help",
+        'group': "service-cmd"
+    },
+    'eval reply': {
+        'alias': ['reval', 'rexec'],
+        'type': 2,
+        'note': "`reval h` / `rexec ?` to see this help",
+        'group': "service-cmd"
+    },
+    'eval file': {
+        'alias': ['feval', 'fexec', 'fe'],
+        'type': 2,
+        'note': "`fe h` to see this help",
+        'group': "service-cmd"
+    },
+    'gets': {
+        'alias': ['get', 'g'],
+        'type': 1,
+        'note': "getchat or getreply",
+        'group': "get"
+    },
+    'get msg id': {
+        'alias': ['thisid', 'thisMsgId', 'MsgId'],
+        'type': 2,
+        'note': "edit text with his id\n"
+                "__{n?: int = 1}__ : send n msg with id\nif have a reply it sends only the id of that",
+        'group': "get",
+        'other': True
+    },
+    'getall': {
+        'alias': ['getAll', 'ga'],
+        'type': 1,
+        'note': f"print all vars of msg and chat on ga files, see `{PREFIX_COMMAND}h getall print`",
+        'group': "get"
+    },
+    'getall print': {
+        'alias': ['pga', 'printga'],
+        'type': 1,
+        'note': "print all ga files",
+        'group': "print"
+    },
+    'getchat': {
+        'alias': ['getchat', 'gc'],
+        'type': 1,
+        'note': "get basic info of chat",
+        'group': "get"
+    },
+    'getchat reply': {
+        'alias': ['getreply', 'getr'],
+        'type': 1,
+        'note': " = getchat, but of reply",
+        'group': "get"
+    },
+    'getid': {
+        'alias': ['getid', 'id'],
+        'type': 1,
+        'note': "get id of chat or replyed user",
+        'group': "get"
+    },
+    'getme': {
+        'alias': ['getme'],
+        'type': 1,
+        'note': "get User instance of myself",
+        'group': "get"
+    },
+    'get reply waiting': {
+        'alias': ['grw', 'gw'],
+        'type': 1,
+        'note': "get reply waiting list (terminal)",
+        'group': "reply-wait"
+    },
+    'greetings': {
+        'alias': ['0'],
+        'type': 2,
+        'note': "write \"buondì\\n come va?\"\n__{c?: char}__ : 'e' for english version",
+        'group': "fast"
+    },
+    'moon': {
+        'alias': ['moon', 'luna'],
+        'type': 2,
+        'note': "graphic moon UAU\n__{n: float = 0.1}__ : seconds between edits, min 0.1",
+        'group': "special",
+        'other': True
+    },
+    'null': {
+        'alias': ['null', 'vuoto', 'void', '', 'spazio', 'space'],
+        'type': 1,
+        'note': "sends the text with empty space, if you reply a message it keeps it",
+        'group': "special",
+        'other': True
+    },
+    'offline': {
+        'alias': ['offline', 'off'],
+        'type': 2,
+        'note': "set your status offline\n"
+                "__{sec?: float = 4} {iter?: int = 5}__ : seconds and number of ripetition(if -1= always)",
+        'group': "service-cmd"
+    },
+    'output': {
+        'alias': ['output', 'out', 'po'],
+        'type': 2,
+        'note': f"print output files\nsee `{PREFIX_COMMAND}out h`",
+        'group': "print"
+    },
+    'pic': {
+        'alias': ['p', 'pic'],
+        'type': 1,
+        'note': "forward reply to pic topic",
+        'group': "send to"
+    },
+    'ping': {
+        'alias': ['ping'],
+        'type': 1,
+        'note': "ping in chat",
+        'group': "service-cmd"
+    },
+    'pingt': {
+        'alias': ['pingt'],
+        'type': 1,
+        'note': "ping in terminal",
+        'group': "service-cmd"
+    },
+    'pipo': {
+        'alias': ['pipo'],
+        'type': 2,
+        'note': "pipo : ascii art\n__{n?: int = rnd}__ : pipo choise= 0,1,2,3",
+        'group': "special",
+        'other': True
+    },
+    'print exec': {
+        'alias': ['pr', 'pt'],
+        'type': 1,
+        'note': "print result or traceback (of exec)",
+        'group': "print"
+    },
+    'remove': {
+        'alias': ['r', 'remove'],
+        'type': 2,
+        'note': f"remove from rw list an user\nsee `{PREFIX_COMMAND}r h`",
+        'group': "reply-wait"
+    },
+    'save': {
+        'alias': ['save'],
+        'type': 1,
+        'note': "forward reply to saved",
+        'group': "send to"
+    },
+    'search': {
+        'alias': ['search'],
+        'type': 2,
+        'note': "search for id or username",
+        'group': "get"
+    },
+    'search reply': {
+        'alias': ['rsearch'],
+        'type': 1,
+        'note': "search for id or username of reply",
+        'group': "get"
+    },
+    'second profile': {
+        'alias': ['2'],
+        'type': 1,
+        'note': "forward reply to second profile",
+        'group': "send to"
+    },
+    'strikethrough': {
+        'alias': ['strikethrough', 'done', 'v'],
+        'type': 1,
+        'note': "strikethrough the replyed message",
+        'group': "fast"
+    },
+    'terminal': {
+        'alias': ['t', 'terminal'],
+        'type': 1,
+        'note': "forward reply to terminal",
+        'group': "send to"
+    },
+    'un attimo': {
+        'alias': ['1'],
+        'type': 2,
+        'note': "\"Dammi un attimo\" + add to 'reply_waiting' list",
+        'group': "fast"
+    },
+}
+""" '': {
+        'alias': ['',' '],
+        'type': 0,
+        'note': "",
+        'group': "generic",
+        'other': True
+    },
+"""
+HELP_PLUS_TEXT = (
+    f"Il prefix è '`{PREFIX_COMMAND}`'\ni comandi '`{PREFIX_SEND_TO}`' sono \"send to\"\n"
+    f"i comandi `{PREFIX_COMMAND}.` e `{PREFIX_SEND_TO}.` ignorano il comando (e cancellano il punto)\n\n"
+    f"cos'è la lista \"reply waiting\" ?\n"
+    "ogni tot tempo va a scrivere alle persone in lista che ancora non sei riuscito a dedicargli tempo\n\n"
+    "come funziona la lista \"reply waiting\" ?\n"
+    " - funziona solo nelle private\n"
+    " - i tempi di attesa sono 1,8,24,36,48 ore. una volta raggiunto 48 ore, si stoppa\n"
+    " - lo invia solo se l'ultimo messaggio non è tuo\n"
+    " - come togliere una persona dalla lista? appena invii un messaggio a quella persona\n"
+    f"     oppure comando `{PREFIX_COMMAND}r` / `{PREFIX_COMMAND}remove`\n"
+    f" - per ottenere la lista: comando `{PREFIX_COMMAND}gw` / `{PREFIX_COMMAND}grw`\n\n\n"
+    f"Others Commands:\n\n"
+    f"Il prefix è `{MY_TAG} {PREFIX_COMMAND}`\n"
+    "Richieste: una ogni 20 sec, esclusa esecuzione, tutte in coda (in teoria)"
+)

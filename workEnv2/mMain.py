@@ -2,7 +2,7 @@ from pyrogram import Client, idle
 
 # crea accanto a mMain.py il file myClientParameter.py con dentro queste tre variabili, io l'ho messo in .gitignore
 from myClientParameter import t_id, t_hash, t_phone, pushbullet_API_KEY as pushKey, OPENAI_API_KEY
-from plugins.myParameters import TERMINAL_ID as TID
+from myplugins.myParameters import TERMINAL_ID as TID, RW_PATH
 from pushbullet import Pushbullet
 
 '''
@@ -12,8 +12,8 @@ t_phone = "numero di telefono"
 '''
 
 pb = Pushbullet(pushKey)
-plugins = dict(root="plugins")
-open("database/reply_waiting.txt", 'w').close()
+plugins = dict(root="myplugins")
+open(RW_PATH, 'w').close()
 title = "Ubot2"
 
 

@@ -9,7 +9,7 @@ from io import StringIO
 from time import perf_counter
 from traceback import print_exc
 from pyrogram import Client, types, enums
-from .myParameters import PREFIX_COMMAND
+from .myParameters import PREFIX_COMMAND, RESULT_PATH, TRACEBACK_PATH
 
 pre_exec = ("async def __todo(client, msg, *args):\n"
             " from .tasker import cancel_tasks_by_name as ctn, cancel_tasks_by_start as cts\n"
@@ -32,7 +32,7 @@ async def aexec(code, *args, timeout=None):
         + "".join(f"\n {_l}" for _l in code.split("\n"))
     )
 
-    with open('database/result.txt', 'w', encoding='utf-8') as file:
+    with open(RESULT_PATH, 'w', encoding='utf-8') as file:
         with redirect_stdout(file), redirect_stderr(file):
             await asyncio.wait_for(locals()["__todo"](*args), timeout=timeout)
 
@@ -99,7 +99,7 @@ async def python_exec(client: Client, msg: types.Message):
         with redirect_stderr(err):
             print_exc()
 
-        open("database/traceback.txt", 'w', encoding="utf-8").write(err.getvalue())
+        open(TRACEBACK_PATH, 'w', encoding="utf-8").write(err.getvalue())
         if le == "":
             return
 
@@ -147,14 +147,14 @@ async def python_exec(client: Client, msg: types.Message):
         is_error[0] = e
 
     try:
-        open("database/traceback.txt", 'w').truncate()
-        open('database/result.txt', 'w').truncate()
+        open(TRACEBACK_PATH, 'w').truncate()
+        open(RESULT_PATH, 'w').truncate()
 
         start_time = perf_counter()
         await aexec(code, client, msg, timeout=None)
         stop_time = perf_counter()
 
-        result = open('database/result.txt', 'r', encoding='utf-8').read()
+        result = open(RESULT_PATH, 'r', encoding='utf-8').read()
 
         if re.match(r"^(https?)://[^\s/$.?#].\S*$", result):
             result = html.escape(result)
