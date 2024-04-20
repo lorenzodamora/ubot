@@ -60,7 +60,7 @@ async def event_handler(client: Client, msg: Msg):
     # group 4 | handle_commands_for_other trigger: start with (MY_TAG + ' ' + PC + {cmd_txt})
     if encode_valid:
         if incoming and msg.text:
-            if msg.text.lower().startswith(MY_TAG + ' ' + PC):
+            if msg.text.lower().startswith(MY_TAG.lower() + ' ' + PC):
                 _ = ctn(handle_commands_for_other(client, msg), name=f"other{sec}")
 
 
