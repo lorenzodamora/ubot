@@ -118,6 +118,23 @@ ASCII_ART = {
 RW_PATH, RESULT_PATH, TRACEBACK_PATH, PY_EXEC_FOLD, GA_FOLD = (
     'database/reply_wait.txt', 'database/result.txt', 'database/traceback.txt', 'database/py_exec', 'database/ga'
 )
+SOURCE_CODE_LINK = "https://github.com/lorenzodamora/ubot/"
+HELP_PLUS_TEXT = (
+    f"Il prefix è '`{PREFIX_COMMAND}`'\ni comandi '`{PREFIX_SEND_TO}`' sono \"send to\"\n"
+    f"i comandi `{PREFIX_COMMAND}.` e `{PREFIX_SEND_TO}.` ignorano il comando (e cancellano il punto)\n\n"
+    f"cos'è la lista \"reply waiting\" ?\n"
+    "ogni tot tempo va a scrivere alle persone in lista che ancora non sei riuscito a dedicargli tempo\n\n"
+    "come funziona la lista \"reply waiting\" ?\n"
+    " - funziona solo nelle private\n"
+    " - i tempi di attesa sono 1,8,24,36,48 ore. una volta raggiunto 48 ore, si stoppa\n"
+    " - lo invia solo se l'ultimo messaggio non è tuo\n"
+    " - come togliere una persona dalla lista? appena invii un messaggio a quella persona\n"
+    f"     oppure comando `{PREFIX_COMMAND}r` / `{PREFIX_COMMAND}remove`\n"
+    f" - per ottenere la lista: comando `{PREFIX_COMMAND}gw` / `{PREFIX_COMMAND}grw`\n\n\n"
+    f"Others Commands:\n\n"
+    f"Il prefix è `{MY_TAG} {PREFIX_COMMAND}`\n"
+    "Richieste: una ogni 20 sec, esclusa esecuzione, tutte in coda (in teoria)"
+)
 COMMANDS = {
     '?': {
         'alias': ['h', 'help', '?', 'commands', 'c'],
@@ -319,6 +336,13 @@ COMMANDS = {
         'note': "forward reply to second profile",
         'group': "send to"
     },
+    'source code': {
+        'alias': ['source', 'sourcecode', 'github', 'git', 'ubot'],
+        'type': 1,
+        'note': "send link of ubot's source code",
+        'group': "service-cmd",
+        'other': True
+    },
     'strikethrough': {
         'alias': ['strikethrough', 'done', 'v'],
         'type': 1,
@@ -337,8 +361,6 @@ COMMANDS = {
         'note': "\"Dammi un attimo\" + add to 'reply_waiting' list",
         'group': "fast"
     },
-}
-"""
     'version': {
         'alias': ['version'],
         'type': 1,
@@ -346,7 +368,7 @@ COMMANDS = {
         'group': "service-cmd",
         'other': True
     },
-"""
+}
 """ '': {
         'alias': ['',' '],
         'type': 0,
@@ -355,19 +377,3 @@ COMMANDS = {
         'other': True
     },
 """
-HELP_PLUS_TEXT = (
-    f"Il prefix è '`{PREFIX_COMMAND}`'\ni comandi '`{PREFIX_SEND_TO}`' sono \"send to\"\n"
-    f"i comandi `{PREFIX_COMMAND}.` e `{PREFIX_SEND_TO}.` ignorano il comando (e cancellano il punto)\n\n"
-    f"cos'è la lista \"reply waiting\" ?\n"
-    "ogni tot tempo va a scrivere alle persone in lista che ancora non sei riuscito a dedicargli tempo\n\n"
-    "come funziona la lista \"reply waiting\" ?\n"
-    " - funziona solo nelle private\n"
-    " - i tempi di attesa sono 1,8,24,36,48 ore. una volta raggiunto 48 ore, si stoppa\n"
-    " - lo invia solo se l'ultimo messaggio non è tuo\n"
-    " - come togliere una persona dalla lista? appena invii un messaggio a quella persona\n"
-    f"     oppure comando `{PREFIX_COMMAND}r` / `{PREFIX_COMMAND}remove`\n"
-    f" - per ottenere la lista: comando `{PREFIX_COMMAND}gw` / `{PREFIX_COMMAND}grw`\n\n\n"
-    f"Others Commands:\n\n"
-    f"Il prefix è `{MY_TAG} {PREFIX_COMMAND}`\n"
-    "Richieste: una ogni 20 sec, esclusa esecuzione, tutte in coda (in teoria)"
-)

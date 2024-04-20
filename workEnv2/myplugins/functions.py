@@ -24,6 +24,7 @@ __all__ = (
     'help_other', 'help_',
     'send_long_msg', 'slm',
     'eval_canc',
+    'get_version'
 )
 
 
@@ -359,3 +360,8 @@ async def eval_canc(c, m, t):
             )
         except Exception as e:
             await slm(c, f"{cancelled}\n\nerror:\n{e.__class__.__name__}: {e}")
+
+
+def get_version():
+    from ..__init__ import __version__, __date__
+    return f"my version: {__version__}\nversion date (italian format): {__date__}"

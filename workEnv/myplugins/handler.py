@@ -597,6 +597,18 @@ async def handle_commands(c: Client, m: Msg):
 
             case 'ping':  # or pingt
                 await pong_(c, m, cmd_txt != "ping")
+
+            case 'version':
+                _del(m)
+                await c.send_message(m.chat.id, get_version())
+
+            case 'source code':
+                _del(m)
+                from .myParameters import SOURCE_CODE_LINK
+                await c.send_message(m.chat.id,
+                                     f"this is my source code: [link]({SOURCE_CODE_LINK})",
+                                     disable_web_page_preview=True
+                                     )
             # endregion
 
             # region special
@@ -692,12 +704,13 @@ async def handle_commands_for_other(c: Client, m: Msg):
             TERMINAL_ID,
             f"Nella chat `{m.chat.id}` è stato richiesto da `{m.from_user.id}` il comando\n{m.text}"
         ))
-
+        secs = 20
         cmd_txt_original = m.text[len(MY_TAG + ' ' + PC):]
         cmd_txt = cmd_txt_original.lower()
 
         if check_cmd(cmd_txt, '?'):
             await m.reply_text(help_other())
+            secs = 5
 
         elif check_cmd(cmd_txt, 'moon'):
             await moon(m, cmd_txt, True)
@@ -707,8 +720,21 @@ async def handle_commands_for_other(c: Client, m: Msg):
 
         elif check_cmd(cmd_txt, 'null'):
             await (m.reply_to_message if m.reply_to_message else m).reply_text("ㅤ")
+            secs = 3
+
+        elif check_cmd(cmd_txt, 'version'):
+            await m.reply(get_version())
+            secs = 1
+
+        elif check_cmd(cmd_txt, 'source code'):
+            from .myParameters import SOURCE_CODE_LINK
+            await m.reply(f"this is my source code: [link]({SOURCE_CODE_LINK})",
+                          disable_web_page_preview=True
+                          )
+            secs = 2
 
         else:
             await m.reply_text(f"! No cmd founded !\n`{m.text}`")
+            secs = 5
 
-        await sleep(19)
+        await sleep(secs)

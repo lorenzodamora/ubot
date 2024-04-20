@@ -37,7 +37,7 @@ async def main(dev=False):
     )
 
     await app.start()
-    await app.send_message(chat_id=TID, text="Ready")
+    await app.send_message(chat_id=TID, text="dev Ready" if dev else "Ready")
 
     if not dev:
         pb.push_note(title, "Ready")
@@ -49,7 +49,7 @@ async def main(dev=False):
         pb.push_note(title, "Stop")
     else:
         print("Stop")
-    await app.send_message(chat_id=TID, text="Stop")
+    await app.send_message(chat_id=TID, text="dev Stop" if dev else "Stop")
 
 
 if __name__ == "__main__":
