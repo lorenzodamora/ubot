@@ -296,7 +296,7 @@ COMMANDS = {
         'group': "reply-wait"
     },
     'save': {
-        'alias': ['save'],
+        'alias': ['save', 's'],
         'type': 1,
         'note': "forward reply to saved",
         'group': "send to"
@@ -338,6 +338,15 @@ COMMANDS = {
         'group': "fast"
     },
 }
+"""
+    'version': {
+        'alias': ['version'],
+        'type': 1,
+        'note': "edit msg with version and date of ubot",
+        'group': "service-cmd",
+        'other': True
+    },
+"""
 """ '': {
         'alias': ['',' '],
         'type': 0,

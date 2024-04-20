@@ -625,77 +625,90 @@ async def handle_commands(c: Client, m: Msg):
     await _matcher(finder_cmd(cmd_txt))
 
 
-async def handle_send_to(client: Client, msg: Msg):
-    cmd_txt = msg.text[1:].lower()
-    c_id = msg.chat.id
+async def handle_send_to(c: Client, m: Msg):
+    cmd_txt_original = m.text[1:]
+    cmd_txt = cmd_txt_original.lower()
+    c_id = m.chat.id
 
     # ">." iniziali fanno in modo che venga scritto > senza comando
     if cmd_txt != "" and cmd_txt[0] == ".":
-        await msg.edit_text(PS + msg.text[2:])
+        await m.edit_text(PC + cmd_txt_original[1:])
+        return
 
-    elif check_cmd(cmd_txt, 'pic'):
-        await msg.delete()
-        if not msg.reply_to_message:
-            await client.send_message(TERMINAL_ID, f"nessun reply per il comando {PS}pic")
-            return
-        from .pyrogram_forward_to_topic import forward_to_topic as for_top
-        from .myParameters import SAVED_MESSAGE_FORUM_ID, PIC_TOPIC_ID
-        await for_top(source_channel_id=c_id,
-                      destination_channel_id=SAVED_MESSAGE_FORUM_ID,
-                      forwarded_message_id=msg.reply_to_message_id,
-                      topic_init_message_id=PIC_TOPIC_ID,
-                      client=client)
+    async def _matcher(cmd_match, is_del: bool = False):
+        nonlocal m, c, cmd_txt_original, cmd_txt
 
-    elif check_cmd(cmd_txt, 'save'):
-        await msg.delete()
-        if not msg.reply_to_message:
-            await client.send_message(TERMINAL_ID, f"nessun reply per il comando {PS}save")
-            return
-        await client.forward_messages('me', msg.chat.id, msg.reply_to_message_id)
+        def _del(_m: Msg):
+            if not is_del:
+                _ = ctn(_m.delete())
 
-    elif check_cmd(cmd_txt, 'second profile'):
-        await msg.delete()
-        from .myParameters import MY_ID2
-        await client.forward_messages(MY_ID2, c_id, msg.reply_to_message_id)
+        match cmd_match:
+            case 'pic':
+                _del(m)
+                if not m.reply_to_message:
+                    await c.send_message(TERMINAL_ID, f"nessun reply per il comando {PS}pic")
+                    return
+                from .pyrogram_forward_to_topic import forward_to_topic as for_top
+                from .myParameters import SAVED_MESSAGE_FORUM_ID, PIC_TOPIC_ID
+                await for_top(source_channel_id=c_id,
+                              destination_channel_id=SAVED_MESSAGE_FORUM_ID,
+                              forwarded_message_id=m.reply_to_message_id,
+                              topic_init_message_id=PIC_TOPIC_ID,
+                              client=c)
 
-    # TODO parametri  ???
-    elif check_cmd(cmd_txt, 'terminal'):
-        await msg.delete()
-        if not msg.reply_to_message:
-            await client.send_message(TERMINAL_ID, f"nessun reply per il comando {PS}terminal")
-            return
-        await client.forward_messages(TERMINAL_ID, c_id, msg.reply_to_message_id)
+            case 'save':
+                _del(m)
+                if not m.reply_to_message:
+                    await c.send_message(TERMINAL_ID, f"nessun reply per il comando {PS}save")
+                    return
+                await c.forward_messages('me', m.chat.id, m.reply_to_message_id)
 
-    else:
-        await msg.delete()
-        await client.send_message(
-            TERMINAL_ID,
-            f"! Nessun comando trovato !\n{msg.text}\nchat:{c_id if c_id != TERMINAL_ID else 'this chat'}")
+            case 'second profile':
+                _del(m)
+                from .myParameters import MY_ID2
+                await c.forward_messages(MY_ID2, c_id, m.reply_to_message_id)
+
+            # TODO parametri, copy or forward, ???
+            case 'terminal':
+                _del(m)
+                if not m.reply_to_message:
+                    await c.send_message(TERMINAL_ID, f"nessun reply per il comando {PS}terminal")
+                    return
+                await c.forward_messages(TERMINAL_ID, c_id, m.reply_to_message_id)
+
+            case _:
+                _del(m)
+                await c.send_message(
+                    TERMINAL_ID,
+                    f"! cmd don't found !\n{m.text}\nchat:{c_id if c_id != TERMINAL_ID else 'this chat'}"
+                )
+
+    await _matcher(finder_cmd(cmd_txt))
 
 
-async def handle_commands_for_other(client: Client, msg: Msg):
+async def handle_commands_for_other(c: Client, m: Msg):
     async with request_lock:
-        _ = ctn(client.send_message(
+        _ = ctn(c.send_message(
             TERMINAL_ID,
-            f"Nella chat `{msg.chat.id}` è stato richiesto da `{msg.from_user.id}` il comando\n{msg.text}"
+            f"Nella chat `{m.chat.id}` è stato richiesto da `{m.from_user.id}` il comando\n{m.text}"
         ))
 
-        cmd_txt_original = msg.text[len(MY_TAG + ' ' + PC):]
+        cmd_txt_original = m.text[len(MY_TAG + ' ' + PC):]
         cmd_txt = cmd_txt_original.lower()
 
         if check_cmd(cmd_txt, '?'):
-            await msg.reply_text(help_other())
+            await m.reply_text(help_other())
 
         elif check_cmd(cmd_txt, 'moon'):
-            await moon(msg, cmd_txt, True)
+            await moon(m, cmd_txt, True)
 
         elif check_cmd(cmd_txt, 'pipo'):
-            await pipo(cmd_txt, msg, True)
+            await pipo(cmd_txt, m, True)
 
         elif check_cmd(cmd_txt, 'null'):
-            await (msg.reply_to_message if msg.reply_to_message else msg).reply_text("ㅤ")
+            await (m.reply_to_message if m.reply_to_message else m).reply_text("ㅤ")
 
         else:
-            await msg.reply_text(f"! Nessun comando trovato !\n`{msg.text}`")
+            await m.reply_text(f"! No cmd founded !\n`{m.text}`")
 
-        await sleep(20)
+        await sleep(19)
