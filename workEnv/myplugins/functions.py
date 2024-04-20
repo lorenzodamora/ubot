@@ -18,10 +18,11 @@ from typing import Union, Optional
 
 __all__ = (
     'check_cmd',
+    'finder_cmd',
     'getchat', 'pong_', 'offline',
     'moon', 'pipo',
     'help_other', 'help_',
-    'send_long_message',
+    'send_long_msg', 'slm',
     'eval_canc',
 )
 
@@ -64,6 +65,26 @@ def check_cmd(txt: str, name: str) -> bool:
     return False
 
 
+def finder_cmd(txt: str) -> str:
+    """
+    trova il comando associato al testo inserito.
+
+    Fa una corrispondenza key insensitive.
+    cerca nei COMMANDS, fa anche altri check personalizzati
+
+    :param txt: Testo di input.
+    :type txt: str
+    :return: ritorna il nome del comando
+    :rtype: str
+    """
+
+    for name in COMMANDS:
+        if check_cmd(txt, name):
+            return name
+
+    return "not find"
+
+
 async def getchat(client: Client, chat: Chat):
     text = (f"id:`{chat.id}`\ntype:{chat.type}\ntitle:{chat.title}\nusername:{chat.username}\nname:{chat.first_name}, "
             f"{chat.last_name}\n" if chat.last_name is not None else '\n')
@@ -82,7 +103,7 @@ async def getchat(client: Client, chat: Chat):
         text += f"id:`{ch.id}`\ntype:{ch.type}\ntitle:{ch.title}\nusername:{ch.username}\nname:{ch.first_name}"
         text += f", {ch.last_name}\n" if ch.last_name is not None else '\n'
         text += f"inviteLink:{ch.invite_link}\nmembri:{ch.members_count}\ndescription:{ch.description}\n\n"
-    await send_long_message(client, text)
+    await slm(client, text)
 
 
 async def pong_(client: Client, msg: Msg, send_terminal=False):
@@ -112,7 +133,7 @@ async def offline(client: Client, seconds: float = 5, iter_: int = 4, from_: str
             _tmp = int(_tmp) if _tmp % 1 == 0 else _tmp
 
             txt = ', '.join(txt) + f" e {_tmp} sec"
-            await send_long_message(
+            await slm(
                 client,
                 f"Verrai settato offline tra {txt}\nfrom: {from_}\n"
                 f"sec:{int(seconds) if seconds % 1 == 0 else seconds} iter:{iter_}"
@@ -272,7 +293,7 @@ def help_(cmd_text):
     return text
 
 
-async def send_long_message(
+async def send_long_msg(
     c: Client, text: str, chat_id: Union[int, str] = TERMINAL_ID, parse_mode: Optional["ParseMode"] = None,
     chunk_size: int = 4096, chunk_start: str = "", chunk_end: str = "", offset_first_chunk_start: Optional[int] = None,
 ):
@@ -305,6 +326,9 @@ async def send_long_message(
         await _send_chunk(chunk_text)
 
 
+slm = send_long_msg
+
+
 async def eval_canc(c, m, t):
     """
     :param c: client
@@ -334,4 +358,4 @@ async def eval_canc(c, m, t):
                 entities=m.entities
             )
         except Exception as e:
-            await send_long_message(c, f"{cancelled}\n\nerror:\n{e.__class__.__name__}: {e}")
+            await slm(c, f"{cancelled}\n\nerror:\n{e.__class__.__name__}: {e}")

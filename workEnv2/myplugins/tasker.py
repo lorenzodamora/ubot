@@ -25,6 +25,9 @@ def cancel_tasks_by_name(name: str, print_=True):
     return ndel
 
 
+ctn = cancel_tasks_by_name
+
+
 def cancel_tasks_by_start(name: str, print_=True):
     tasks = asyncio.all_tasks()
     ndel = 0
@@ -35,6 +38,9 @@ def cancel_tasks_by_start(name: str, print_=True):
     if print_:
         print(f"n task cancelled: {ndel}")
     return ndel
+
+
+cts = cancel_tasks_by_start
 
 
 def cancel_tasks_by_end(name: str, print_=True):
@@ -49,6 +55,9 @@ def cancel_tasks_by_end(name: str, print_=True):
     return ndel
 
 
+cte = cancel_tasks_by_end
+
+
 async def _internal_ct(task):
     print(f"task {task.get_name()} in progress")
     await task
@@ -61,3 +70,6 @@ def create_task_name(coro, name=None):
     # _ = asyncio.create_task(_internal_ct(task), name=f"internal_ct {name}")
 
     return task
+
+
+create_task = create_task_name

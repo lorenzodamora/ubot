@@ -138,6 +138,12 @@ COMMANDS = {
         'note': "\"uso i messaggi automatici perché..\"\n__{c?: char}__ : 'e' for english version",
         'group': "fast"
     },
+    'delcmd': {
+        'alias': [f'del{PREFIX_COMMAND}', f'd{PREFIX_COMMAND}'],
+        'type': 2,
+        'note': "run cmd and delete msg\nex.:`,del, eval p(1)`",
+        'group': "service-cmd"
+    },
     'delete': {
         'alias': ['del', 'd'],
         'type': 2,

@@ -124,8 +124,8 @@ async def python_exec(client: Client, msg: types.Message):
 
         except Exception as ee:
             await msg.delete()
-            from .handler import send_long_message
-            await send_long_message(client, f"{msg_text}\nnew error:\n{ee.__class__.__name__}: {ee}")
+            from .handler import slm
+            await slm(client, f"{msg_text}\nnew error:\n{ee.__class__.__name__}: {ee}")
 
     is_error = {
         0: False,

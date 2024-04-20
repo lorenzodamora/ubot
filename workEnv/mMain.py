@@ -21,13 +21,15 @@ async def main(dev=False):
     from os import environ
     if dev:
         environ['dev'] = '1'
+        _title = "dev"
     else:
         environ['dev'] = '0'
+        _title = title
 
     environ['OPENAI_API_KEY'] = OPENAI_API_KEY
 
     app = Client(
-        name=title,
+        name=_title,
         api_id=t_id,
         api_hash=t_hash,
         phone_number=t_phone,
