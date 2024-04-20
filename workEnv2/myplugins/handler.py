@@ -605,10 +605,11 @@ async def handle_commands(c: Client, m: Msg):
             case 'source code':
                 _del(m)
                 from .myParameters import SOURCE_CODE_LINK
-                await c.send_message(m.chat.id,
-                                     f"this is my source code: [link]({SOURCE_CODE_LINK})",
-                                     disable_web_page_preview=True
-                                     )
+                await c.send_message(
+                    m.chat.id,
+                    f"this is my source code: [link]({SOURCE_CODE_LINK})",
+                    disable_web_page_preview=True
+                )
             # endregion
 
             # region special
@@ -728,9 +729,7 @@ async def handle_commands_for_other(c: Client, m: Msg):
 
         elif check_cmd(cmd_txt, 'source code'):
             from .myParameters import SOURCE_CODE_LINK
-            await m.reply(f"this is my source code: [link]({SOURCE_CODE_LINK})",
-                          disable_web_page_preview=True
-                          )
+            await m.reply(f"this is my source code: [link]({SOURCE_CODE_LINK})", disable_web_page_preview=True)
             secs = 2
 
         else:

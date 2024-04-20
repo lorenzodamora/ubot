@@ -363,5 +363,12 @@ async def eval_canc(c, m, t):
 
 
 def get_version():
-    from ..__init__ import __version__, __date__
-    return f"my version: {__version__}\nversion date (italian format): {__date__}"
+    """strange get ahah"""
+    version = date = "not finded"
+    for line in open("./__init__.py", 'r', encoding='utf-8').readlines():
+        if line.startswith("__version__"):
+            version = line.replace(' ', '').split("=")[1].replace('"', '').strip()
+        elif line.startswith("__date__"):
+            date = line.replace(' ', '').split("=")[1].split('#')[0].replace('"', '').strip()
+
+    return f"my version: {version}\nversion date (italian format): {date}"
