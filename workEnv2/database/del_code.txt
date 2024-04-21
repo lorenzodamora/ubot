@@ -370,3 +370,58 @@ async def anti_flood_cycle(c: Client, text: str, chat_id: Union[int, str], parse
         except FloodWait as e:
             await sleep(e.value)
 """
+
+async def markdown_escape(m: Msg):
+
+    def _markdown_escape(text: str):
+        return text
+
+    new_text = None
+    edit = m.edit
+
+    if m.text:
+        new_text = _markdown_escape(m.text)
+
+    elif m.caption:
+        edit = m.edit_caption
+        new_text = _markdown_escape(m.text)
+
+    if new_text:
+        m = await edit(new_text, entities=m.entities)
+
+    return m
+
+.venv/Lib/site-packages/pyrogram/parser/markdown.py
+
+BOLD_DELIM = "**"
+ITALIC_DELIM = "__"
+UNDERLINE_DELIM = "--"
+STRIKE_DELIM = "~~"
+SPOILER_DELIM = "||"
+CODE_DELIM = "`"
+PRE_DELIM = "```"
+BLOCKQUOTE_DELIM = ">"
+
+MARKDOWN_RE = re.compile(r"({d})|(!?)\[(.+?)\]\((.+?)\)".format(
+    d="|".join(
+        ["".join(i) for i in [
+            [rf"\{j}" for j in i]
+            for i in [
+                PRE_DELIM,
+                CODE_DELIM,
+                STRIKE_DELIM,
+                UNDERLINE_DELIM,
+                ITALIC_DELIM,
+                BOLD_DELIM,
+                SPOILER_DELIM
+            ]
+        ]]
+    )))
+
+OPENING_TAG = "<{}>"
+CLOSING_TAG = "</{}>"
+URL_MARKUP = '<a href="{}">{}</a>'
+EMOJI_MARKUP = '<emoji id={}>{}</emoji>'
+FIXED_WIDTH_DELIMS = [CODE_DELIM, PRE_DELIM]
+
+.venv/Lib/site-packages/pyrogram/parser/markdown.py

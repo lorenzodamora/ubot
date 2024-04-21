@@ -9,7 +9,6 @@ from .myParameters import (
     TERMINAL_ID,
     PREFIX_COMMAND as PC, PREFIX_SEND_TO as PS,
     MY_TAG,
-    RW_PATH,
     HELP_PLUS_TEXT,
 )
 from .functions import *
@@ -37,12 +36,6 @@ async def event_handler(client: Client, msg: Msg):
     is_me: bool = bool(fr_u and fr_u.is_self or msg.outgoing)
     sec = msg.date.second
 
-    # group -1
-    if encode_valid:
-        if is_me and is_pvt and not (msg.text and msg.text.startswith(PC + '1')):
-            from .waiting import remove_rw
-            _ = ctn(remove_rw(str(ch.id)), name=f'remove{sec}')
-
     if encode_valid:
         if is_me and msg.text:
             # group 1
@@ -54,7 +47,6 @@ async def event_handler(client: Client, msg: Msg):
 
     # group 3
     if is_pvt and incoming:
-        from .waiting import benvenuto
         _ = ctn(benvenuto(client, msg), name=f"benvenuto{sec}")
 
     # group 4 | handle_commands_for_other trigger: start with (MY_TAG + ' ' + PC + {cmd_txt})
@@ -152,14 +144,6 @@ async def handle_commands(c: Client, m: Msg):
                 sec_in = m.date.second
                 await m.edit("Dammi un attimo e ti scrivo subito.")
                 _ = ctn(offline(c, 4, 10, f"comando {PC}1"), f'offline{sec_in}')
-                if m.chat.type != ChatType.PRIVATE:
-                    return
-                from .waiting import check_chat_for_reply_waiting as ccfrw, lock_rw, non_risposto
-                if not await ccfrw(chat_id):
-                    return
-                async with lock_rw:
-                    open(RW_PATH, 'a').write(f"{chat_id};1\n")
-                _ = ctn(non_risposto(c, chat_id), f"non_risposto{sec_in}")
             # endregion
 
             # region get
@@ -384,61 +368,6 @@ async def handle_commands(c: Client, m: Msg):
                                     offset_first_chunk_start=len(title))
             # endregion
 
-            # region reply-wait
-            case 'get reply waiting':
-                _del(m)
-                from .waiting import lock_rw
-                async with lock_rw:
-                    text = open(RW_PATH, "r").read()
-                title = "reply_waiting.txt\n\n"
-                if text == "":
-                    text = title + "file vuoto"
-                else:
-                    text = title + text
-                await send_long_msg(c, text)
-
-            case 'remove':
-                _del(m)
-                txts: list[str] = cmd_txt_original.split(maxsplit=1)
-                if len(txts) == 1:
-                    c_id = m.chat.id
-
-                elif txts[1] in ['h', '?']:
-                    await c.send_message(TERMINAL_ID,
-                                         f"`{PC}r `(remove from reply-wait list)  parameters:\n\n"
-                                         "`h` / `?` : this help\n\n"
-                                         "None : this chat\n"
-                                         "id : chat id\n"
-                                         "`@`username : chat id from username\n")
-                    return
-
-                elif len(txts[1].split(maxsplit=1)) > 1:
-                    await c.send_message(TERMINAL_ID, f"`{m.text}`\ninvalid arguments, see `{PC}r h`")
-                    return
-
-                elif txts[1].startswith('@'):
-                    from pyrogram.errors.exceptions.bad_request_400 import UsernameInvalid
-                    try:
-                        c_id = (await c.get_chat(txts[1])).id
-                    except UsernameInvalid:
-                        await c.send_message(TERMINAL_ID, f"`{m.text}`\ninvalid username")
-                        return
-
-                else:
-                    c_id = txts[1]
-
-                from pyrogram.errors.exceptions.bad_request_400 import PeerIdInvalid
-                try:
-                    if (await c.get_chat(c_id)).type != ChatType.PRIVATE:
-                        return
-                except PeerIdInvalid:
-                    await c.send_message(TERMINAL_ID, f"`{m.text}`\ninvalid id")
-                    return
-
-                from .waiting import remove_rw
-                _ = ctn(remove_rw(str(c_id)), f"remove{m.date.second}")
-            # endregion
-
             # region service-cmd
             case 'delete':
                 _del(m)
@@ -582,6 +511,24 @@ async def handle_commands(c: Client, m: Msg):
 
                 task = ctn(_fexec(), f'exec file{m.date.second}')
                 await eval_canc(c, m, task)
+
+            case 'math' | 'math reply':
+                is_r = m.text[1:].startswith(("rmath", "rcalc"))
+                if (len(m.text.split(maxsplit=1)) == 1 and not is_r) or (is_r and not m.reply_to_message):
+                    await m.edit_text(f"`{m.text}`\n<b>Expression required to calculate</b>")
+                    return
+
+                code = m.reply_to_message.text if is_r else m.text.split(maxsplit=1)[1]
+
+                # fix character \u00A0
+                code = code.replace("\u00A0", "").strip()
+
+                try:
+                    await m.reply(f"<code>{eval(code)}</code>",
+                                  disable_web_page_preview=True, parse_mode=ParseMode.HTML)
+                except Exception as e:
+                    await m.reply(f"<i>{code}</i><b> = </b><code>{e}</code>",
+                                  disable_web_page_preview=True, parse_mode=ParseMode.HTML)
 
             case 'offline':
                 _del(m)

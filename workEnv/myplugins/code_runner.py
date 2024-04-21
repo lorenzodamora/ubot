@@ -15,14 +15,8 @@ PRE_EXEC = ("async def __todo(client, msg, *args):\n"
             " from .tasker import cancel_tasks_by_name as ctn, cancel_tasks_by_start as cts, "
             "cancel_tasks_by_end as cte, read_all_my_tasks as rat\n"
             " # ctn  cts  cte  auto-print the count of task cancelled\n"
-            " at: str = rat()  # all task, rat(True) to auto-print\n"
-            " c = client\n"
-            " m = msg\n"
-            " r = m.reply_to_message\n"
-            " u = m.from_user\n"
-            " ru = getattr(r, 'from_user', None)\n"
-            " here = getattr(m.chat, 'id', None)\n"
-            " p = print\n"
+            " c, m, p = client, msg, print\n"
+            " r, u, here = m.reply_to_message, m.from_user, getattr(m.chat, 'id', None)\n"
             " # \"\".join(f\"\\n {_l}\" for _l in code.split(\"\\n\"))\n")
 
 
@@ -51,7 +45,8 @@ code_executing = (
 code_result = (
     code_ +
     "{result}\n"
-    f"see database/ \"result.txt & traceback.txt\" or print with `{PREFIX_COMMAND}pr` & `{PREFIX_COMMAND}pt`"
+    f"see database/ \"result.txt & traceback.txt\" or print with"
+    f" <code>{PREFIX_COMMAND}pr</code> & <code>{PREFIX_COMMAND}pt</code>"
 )
 
 
@@ -118,7 +113,8 @@ async def python_exec(client: Client, msg: types.Message):
         try:
             await msg.edit_text(
                 msg_text,
-                disable_web_page_preview=True
+                disable_web_page_preview=True,
+                parse_mode=enums.ParseMode.HTML
             )
             return
 
@@ -141,7 +137,7 @@ async def python_exec(client: Client, msg: types.Message):
             pre_language="python",
             code=html.escape(code),
         )
-        await msg.edit_text(is_error['text0'], disable_web_page_preview=True)
+        await msg.edit_text(is_error['text0'], disable_web_page_preview=True, parse_mode=enums.ParseMode.HTML)
 
     except Exception as e:
         is_error[0] = e
@@ -170,7 +166,7 @@ async def python_exec(client: Client, msg: types.Message):
                    f"{result}\n"
                    f"<b>Completed in {round(stop_time - start_time, 5)}s.</b>",
         )
-        await msg.edit_text(is_error['text1'], disable_web_page_preview=True)
+        await msg.edit_text(is_error['text1'], disable_web_page_preview=True, parse_mode=enums.ParseMode.HTML)
 
     except asyncio.TimeoutError:
         is_error['text1'] = code_result.format(
@@ -180,7 +176,7 @@ async def python_exec(client: Client, msg: types.Message):
             code=html.escape(code),
             result="<b><emoji id=5465665476971471368>❌</emoji> Timeout Error!</b>",
         )
-        await msg.edit_text(is_error['text1'], disable_web_page_preview=True)
+        await msg.edit_text(is_error['text1'], disable_web_page_preview=True, parse_mode=enums.ParseMode.HTML)
 
     except Exception as e:
         is_error[1] = e

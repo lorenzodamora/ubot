@@ -5,16 +5,19 @@ l'event handler stava diventando troppo lungo
 from pyrogram import Client
 from pyrogram.types import Message as Msg, Chat
 from pyrogram.enums import ChatType, ParseMode
+from pyrogram.errors.exceptions.flood_420 import FloodWait
+from pyrogram.raw.types import MessageService, MessageActionContactSignUp
+
 from .myParameters import (
     TERMINAL_ID,
     PREFIX_COMMAND as PC, PREFIX_SEND_TO as PS,
     MY_TAG,
     COMMANDS,
+    WELCOME_MSG,
 )
 from asyncio import sleep
 from .tasker import create_task_name
 from typing import Union, Optional
-
 
 __all__ = (
     'check_cmd',
@@ -24,7 +27,8 @@ __all__ = (
     'help_other', 'help_',
     'send_long_msg', 'slm',
     'eval_canc',
-    'get_version'
+    'get_version',
+    'benvenuto'
 )
 
 
@@ -88,7 +92,7 @@ def finder_cmd(txt: str) -> str:
 
 async def getchat(client: Client, chat: Chat):
     text = (f"id:`{chat.id}`\ntype:{chat.type}\ntitle:{chat.title}\nusername:{chat.username}\nname:{chat.first_name}, "
-            f"{chat.last_name}\n" if chat.last_name is not None else '\n')
+            + (f"{chat.last_name}\n" if chat.last_name is not None else '\n'))
     if chat.type in [ChatType.GROUP, ChatType.SUPERGROUP]:
         text += f"inviteLink:{chat.invite_link}\nmembri:{chat.members_count}\ndescription:\n{chat.description}\n\n"
     elif chat.type == ChatType.PRIVATE:
@@ -101,9 +105,9 @@ async def getchat(client: Client, chat: Chat):
     text = f"common chats:\n\n"
     chatlist = await client.get_common_chats(chat.id)
     for ch in chatlist:
-        text += f"id:`{ch.id}`\ntype:{ch.type}\ntitle:{ch.title}\nusername:{ch.username}\nname:{ch.first_name}"
-        text += f", {ch.last_name}\n" if ch.last_name is not None else '\n'
-        text += f"inviteLink:{ch.invite_link}\nmembri:{ch.members_count}\ndescription:{ch.description}\n\n"
+        text += (f"id:`{ch.id}`\ntype:{ch.type}\ntitle:{ch.title}\nusername:{ch.username}\nname:{ch.first_name}"
+                 + (f", {ch.last_name}\n" if ch.last_name is not None else '\n') +
+                 f"inviteLink:{ch.invite_link}\nmembri:{ch.members_count}\ndescription:{ch.description}\n\n")
     await slm(client, text)
 
 
@@ -372,3 +376,30 @@ def get_version():
             date = line.replace(' ', '').split("=")[1].split('#')[0].replace('"', '').strip()
 
     return f"my version: {version}\nversion date (italian format): {date}"
+
+
+async def benvenuto(client: Client, msg: Msg):
+    # Ottieni il numero di messaggi nella chat
+    chat_id = msg.chat.id
+    try:
+        num_msg: int = await client.get_chat_history_count(chat_id)
+    except FloodWait:
+        return
+
+    if num_msg == 1:
+        if isinstance(msg.raw, MessageService):
+            if isinstance(msg.raw.action, MessageActionContactSignUp):
+                await client.send_message(
+                    chat_id,
+                    "Benvenutə su telegram! Se hai bisogno di una guida oppure semplicemente "
+                    "abituarti a telegram conversiamo volentieri!"
+                )
+
+    if num_msg > 2:
+        return
+        # pass
+    async for hmsg in client.get_chat_history(chat_id):
+        if hmsg.from_user.is_self:
+            return
+    # client.send_message(chat_id=message.chat.id, text="num_msg : " + str(num_messaggi))
+    await client.send_message(chat_id, WELCOME_MSG)

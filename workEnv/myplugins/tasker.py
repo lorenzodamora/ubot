@@ -1,7 +1,7 @@
 import asyncio
 
 
-def read_all_my_tasks(print_=False):
+def read_all_my_tasks(print_=True):
     tasks = asyncio.all_tasks()
     ret = ""
     for task in tasks:
@@ -11,6 +11,9 @@ def read_all_my_tasks(print_=False):
     if print_:
         print(f"all my tasks:\n{ret[:-1]}")
     return ret[:-1]
+
+
+rat = read_all_my_tasks
 
 
 def cancel_tasks_by_name(name: str, print_=True):

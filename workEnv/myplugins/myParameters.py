@@ -24,7 +24,7 @@ MY_ID, MY_ID2 = 649363031, 1259233812
 MY_TAG, MY_TAG2 = '@Ill_Magnus', '@ill_lore'
 TERMINAL_ID = -1001995530063
 SAVED_MESSAGE_FORUM_ID, PIC_TOPIC_ID = -1001971247646, 18  # Forum: Saved Message > Topic:Pic
-PREFIX_COMMAND, PREFIX_SEND_TO = ',', '>'
+PREFIX_COMMAND, PREFIX_SEND_TO = ',', '^'
 WELCOME_MSG, WELCOME_MSG1 = "Ti ringrazio di avermi contattato, ti risponderò appena possibile.", (
     "! messaggio automatico !\nTi ringrazio di avermi contattato, ti risponderò appena possibile.\n"
     "Chiedo Scusa in anticipo per il tempo che potrei metterci, ma siete in tantissimi!")
@@ -115,22 +115,13 @@ ASCII_ART = {
         "..................\u2580\u258c\u2592\u2580\u2592\u2590\u2580",
     'null': ''
 }
-RW_PATH, RESULT_PATH, TRACEBACK_PATH, PY_EXEC_FOLD, GA_FOLD = (
-    'database/reply_wait.txt', 'database/result.txt', 'database/traceback.txt', 'database/py_exec', 'database/ga'
+RESULT_PATH, TRACEBACK_PATH, PY_EXEC_FOLD, GA_FOLD = (
+    'database/result.txt', 'database/traceback.txt', 'database/py_exec', 'database/ga'
 )
 SOURCE_CODE_LINK = "https://github.com/lorenzodamora/ubot/"
 HELP_PLUS_TEXT = (
     f"Il prefix è '`{PREFIX_COMMAND}`'\ni comandi '`{PREFIX_SEND_TO}`' sono \"send to\"\n"
     f"i comandi `{PREFIX_COMMAND}.` e `{PREFIX_SEND_TO}.` ignorano il comando (e cancellano il punto)\n\n"
-    f"cos'è la lista \"reply waiting\" ?\n"
-    "ogni tot tempo va a scrivere alle persone in lista che ancora non sei riuscito a dedicargli tempo\n\n"
-    "come funziona la lista \"reply waiting\" ?\n"
-    " - funziona solo nelle private\n"
-    " - i tempi di attesa sono 1,8,24,36,48 ore. una volta raggiunto 48 ore, si stoppa\n"
-    " - lo invia solo se l'ultimo messaggio non è tuo\n"
-    " - come togliere una persona dalla lista? appena invii un messaggio a quella persona\n"
-    f"     oppure comando `{PREFIX_COMMAND}r` / `{PREFIX_COMMAND}remove`\n"
-    f" - per ottenere la lista: comando `{PREFIX_COMMAND}gw` / `{PREFIX_COMMAND}grw`\n\n\n"
     f"Others Commands:\n\n"
     f"Il prefix è `{MY_TAG} {PREFIX_COMMAND}`\n"
     "Richieste: una ogni 20 sec, esclusa esecuzione, tutte in coda (in teoria)"
@@ -171,7 +162,7 @@ COMMANDS = {
     'eval': {
         'alias': ['eval', 'exec'],
         'type': 2,
-        'note': "`eval h` / `exec ?` to see this help",
+        'note': "evaluate code, `eval h` / `exec ?` to see this help",
         'group': "service-cmd"
     },
     'eval reply': {
@@ -236,17 +227,23 @@ COMMANDS = {
         'note': "get User instance of myself",
         'group': "get"
     },
-    'get reply waiting': {
-        'alias': ['grw', 'gw'],
-        'type': 1,
-        'note': "get reply waiting list (terminal)",
-        'group': "reply-wait"
-    },
     'greetings': {
         'alias': ['0'],
         'type': 2,
         'note': "write \"buondì\\n come va?\"\n__{c?: char}__ : 'e' for english version",
         'group': "fast"
+    },
+    'math': {
+        'alias': ['math', 'calc'],
+        'type': 2,
+        'note': "clear simply evaluate, ex.: calcolate a math expression",
+        'group': "special",
+    },
+    'math reply': {
+        'alias': ['rmath', 'rcalc'],
+        'type': 2,
+        'note': "same as math, but input from replyed text",
+        'group': "special",
     },
     'moon': {
         'alias': ['moon', 'luna'],
@@ -306,12 +303,6 @@ COMMANDS = {
         'note': "print result or traceback (of exec)",
         'group': "print"
     },
-    'remove': {
-        'alias': ['r', 'remove'],
-        'type': 2,
-        'note': f"remove from rw list an user\nsee `{PREFIX_COMMAND}r h`",
-        'group': "reply-wait"
-    },
     'save': {
         'alias': ['save', 's'],
         'type': 1,
@@ -358,11 +349,11 @@ COMMANDS = {
     'un attimo': {
         'alias': ['1'],
         'type': 2,
-        'note': "\"Dammi un attimo\" + add to 'reply_waiting' list",
+        'note': "\"Dammi un attimo\"",
         'group': "fast"
     },
     'version': {
-        'alias': ['version'],
+        'alias': ['version', '-v'],
         'type': 1,
         'note': "edit msg with version and date of ubot",
         'group': "service-cmd",
