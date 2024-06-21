@@ -1,5 +1,0 @@
-"""
-cef.txt: clear exec files (result & traceback)
-"""
-open("database/result.txt", 'w').truncate()
-open("database/traceback.txt", 'w').truncate()

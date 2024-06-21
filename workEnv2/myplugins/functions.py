@@ -4,20 +4,15 @@ l'event handler stava diventando troppo lungo
 """
 from pyrogram import Client
 from pyrogram.types import Message as Msg, Chat
-from pyrogram.enums import ChatType, ParseMode
+from pyrogram.enums import ParseMode
 from pyrogram.errors.exceptions.flood_420 import FloodWait
-from pyrogram.raw.types import MessageService, MessageActionContactSignUp
 
 from .myParameters import (
     TERMINAL_ID,
-    PREFIX_COMMAND as PC, PREFIX_SEND_TO as PS,
-    MY_TAG,
+    PREFIX_COMMAND as PC,
     COMMANDS,
-    WELCOME_MSG,
 )
 from asyncio import sleep
-from .tasker import create_task_name
-from typing import Union, Optional
 
 __all__ = (
     'check_cmd',
@@ -28,7 +23,9 @@ __all__ = (
     'send_long_msg', 'slm',
     'eval_canc',
     'get_version',
-    'benvenuto'
+    'benvenuto',
+    'wait_read',
+    'get_the_cmd'
 )
 
 
@@ -91,6 +88,7 @@ def finder_cmd(txt: str) -> str:
 
 
 async def getchat(client: Client, chat: Chat):
+    from pyrogram.enums import ChatType
     text = (f"id:`{chat.id}`\ntype:{chat.type}\ntitle:{chat.title}\nusername:{chat.username}\nname:{chat.first_name}, "
             + (f"{chat.last_name}\n" if chat.last_name is not None else '\n'))
     if chat.type in [ChatType.GROUP, ChatType.SUPERGROUP]:
@@ -98,7 +96,7 @@ async def getchat(client: Client, chat: Chat):
     elif chat.type == ChatType.PRIVATE:
         text += (f"bio:{chat.bio}\nphone:{getattr(chat, 'phone_number', '\\')}\n"
                  f"restrictions:{getattr(chat, 'restrictions', '\\')}\n\n")
-    await client.send_message(TERMINAL_ID, text)
+    await send_long_msg(text, client=client)
 
     if chat.type != ChatType.PRIVATE:
         return
@@ -108,7 +106,7 @@ async def getchat(client: Client, chat: Chat):
         text += (f"id:`{ch.id}`\ntype:{ch.type}\ntitle:{ch.title}\nusername:{ch.username}\nname:{ch.first_name}"
                  + (f", {ch.last_name}\n" if ch.last_name is not None else '\n') +
                  f"inviteLink:{ch.invite_link}\nmembri:{ch.members_count}\ndescription:{ch.description}\n\n")
-    await slm(client, text)
+    await send_long_msg(text, client=client)
 
 
 async def pong_(client: Client, msg: Msg, send_terminal=False):
@@ -138,10 +136,10 @@ async def offline(client: Client, seconds: float = 5, iter_: int = 4, from_: str
             _tmp = int(_tmp) if _tmp % 1 == 0 else _tmp
 
             txt = ', '.join(txt) + f" e {_tmp} sec"
-            await slm(
-                client,
+            await send_long_msg(
                 f"Verrai settato offline tra {txt}\nfrom: {from_}\n"
-                f"sec:{int(seconds) if seconds % 1 == 0 else seconds} iter:{iter_}"
+                f"sec:{int(seconds) if seconds % 1 == 0 else seconds} iter:{iter_}",
+                client=client
             )
 
             await client.invoke(UpdateStatus(offline=True))  # 0s
@@ -163,11 +161,16 @@ async def offline(client: Client, seconds: float = 5, iter_: int = 4, from_: str
 
 
 async def moon(m: Msg, txt: str, other: bool):
-    async def _moon(_m):
-        from pyrogram.errors.exceptions.flood_420 import FloodWait
+    from .tasker import create_task_name
+
+    async def _moon(_m: Msg):
+        from pyrogram.errors.exceptions.bad_request_400 import MessageNotModified
         moon_list = ["🌕", "🌖", "🌗", "🌘", "🌑", "🌒", "🌓", "🌔"]
         if other:
             _m = await _m.reply_text("LUNA UAU")
+
+        read_task = create_task_name(wait_read(message=_m), name="moon edit read waiting")
+
         try:
             sec = float(txt.split(" ")[1])
         except (IndexError, ValueError):
@@ -175,18 +178,32 @@ async def moon(m: Msg, txt: str, other: bool):
         if sec < 0.1:
             sec = 0.1
 
+        _ = create_task_name(_m.edit_text(''.join(moon_list[:5]) + "ㅤ"), name="moon edit -1")
+        await read_task
+
         for i in range(29):
             moon_list = moon_list[-1:] + moon_list[:-1]
             text = ''.join(moon_list[:5]) + "ㅤ"
-            try:
-                _ = create_task_name(_m.edit_text(text), name=f"moon edit {i}")
-            except FloodWait:
-                pass
+
+            async def editing_text():
+                try:
+                    await _m.edit_text(text)
+                except (FloodWait, MessageNotModified):
+                    pass
+
+            _ = create_task_name(editing_text(), name=f"moon{m.date.second} edit {i}")
             await sleep(sec)
 
         moon_list = moon_list[-1:] + moon_list[:-1]
         text = ''.join(moon_list[:5]) + "ㅤ"
-        await _m.edit_text(text)
+        while True:
+            try:
+                await _m.edit_text(text)
+                return  # Successful edit
+            except FloodWait as e:
+                await sleep(e.value)
+            except MessageNotModified:
+                return
 
     _ = create_task_name(_moon(m), name=f'moon{m.date.second}')
 
@@ -235,7 +252,8 @@ def h_groupping(cmd_or=None):
 
 
 def h_format_group(group_, cmd_i):
-    pre = PS if group_ == "send to" else PC
+    from .myParameters import PREFIX_SEND_TO
+    pre = PREFIX_SEND_TO if group_ == "send to" else PC
     ftext = f"**{group_}**:\n"
     for command_info in cmd_i:
         formatted_aliases = ' '.join([f'`{pre}{alias}`' for alias in command_info[1]])
@@ -246,6 +264,7 @@ def h_format_group(group_, cmd_i):
 
 
 def help_other():
+    from .myParameters import MY_TAG
     text = (f"All commands usable from others:\n"
             f"The prefix is `{MY_TAG} {PC}`\n"
             "Requests: one every 20 sec, esecution excluded, all in queue (theorically)\n\n")
@@ -299,18 +318,21 @@ def help_(cmd_text):
 
 
 async def send_long_msg(
-    c: Client, text: str, chat_id: Union[int, str] = TERMINAL_ID, parse_mode: Optional["ParseMode"] = None,
-    chunk_size: int = 4096, chunk_start: str = "", chunk_end: str = "", offset_first_chunk_start: Optional[int] = None,
+    text: str, chat_id: int | str = TERMINAL_ID, parse_mode: ParseMode | None = None,
+    chunk_size: int = 4096, chunk_start: str = "", chunk_end: str = "", offset_first_chunk_start: int | None = None,
+    client: Client | None = None,
 ):
-    from pyrogram.errors.exceptions.flood_420 import FloodWait
-
     async def _send_chunk(_text):
         while True:
             try:
-                await c.send_message(chat_id, str(_text), parse_mode=parse_mode)
+                await client.send_message(chat_id, str(_text), parse_mode=parse_mode, disable_web_page_preview=True)
                 return  # Successful send
             except FloodWait as e:
                 await sleep(e.value)
+
+    if client is None:
+        from .myParameters import app
+        client = app
 
     c_s = chunk_size - len(chunk_start) - len(chunk_end)
 
@@ -363,22 +385,17 @@ async def eval_canc(c, m, t):
                 entities=m.entities
             )
         except Exception as e:
-            await slm(c, f"{cancelled}\n\nerror:\n{e.__class__.__name__}: {e}")
+            await send_long_msg(f"{cancelled}\n\nerror:\n{e.__class__.__name__}: {e}", client=c)
 
 
 def get_version():
-    """strange get ahah"""
-    version = date = "not finded"
-    for line in open("./__init__.py", 'r', encoding='utf-8').readlines():
-        if line.startswith("__version__"):
-            version = line.replace(' ', '').split("=")[1].replace('"', '').strip()
-        elif line.startswith("__date__"):
-            date = line.replace(' ', '').split("=")[1].split('#')[0].replace('"', '').strip()
-
-    return f"my version: {version}\nversion date (italian format): {date}"
+    from . import __version__, __date__
+    return f"my version: {__version__}\nversion date (italian format): {__date__}"
 
 
 async def benvenuto(client: Client, msg: Msg):
+    from pyrogram.raw.types import MessageService, MessageActionContactSignUp
+
     # Ottieni il numero di messaggi nella chat
     chat_id = msg.chat.id
     try:
@@ -394,6 +411,7 @@ async def benvenuto(client: Client, msg: Msg):
                     "Benvenutə su telegram! Se hai bisogno di una guida oppure semplicemente "
                     "abituarti a telegram conversiamo volentieri!"
                 )
+                await offline(client, 0, 1, f"benvenuto chat id: `{chat_id}`")
 
     if num_msg > 2:
         return
@@ -402,4 +420,129 @@ async def benvenuto(client: Client, msg: Msg):
         if hmsg.from_user.is_self:
             return
     # client.send_message(chat_id=message.chat.id, text="num_msg : " + str(num_messaggi))
+    from .myParameters import WELCOME_MSG
     await client.send_message(chat_id, WELCOME_MSG)
+    await offline(client, 0, 1, f"welcome chat id: `{chat_id}`")
+
+
+async def wait_read(
+    chatid: int | str | None = None, msgid: int | str | None = None, top_msgid: int | str | None = None,
+    message: Msg | None = None, target_userid: int | str | None = None, client: Client | None = None
+):
+    if (message is not None) and (chatid is None and msgid is None and top_msgid is None):
+        chatid = message.chat.id
+        msgid = message.id
+        top_msgid = message.message_thread_id
+        """
+    elif (chatid is not None and msgid is not None) and (message is None):
+        pass
+    else:
+        raise ValueError("devi specificare message oppure chatid, msgid e top_msgid, top_msgid può essere None.")
+        """
+    elif not ((chatid is not None and msgid is not None) and (message is None)):
+        raise ValueError("devi specificare message oppure chatid, msgid e top_msgid, top_msgid può essere None.")
+
+    chatid = str(chatid)
+    msgid = int(msgid)
+
+    if target_userid:
+        target_userid = str(target_userid)
+
+        # less or equal to  "chat_read_mark_size_threshold": 100,
+        # "chat_read_mark_expire_period": 604800  seconds after the message was sent
+        from pyrogram.raw.functions.messages import GetMessageReadParticipants
+        from pyrogram.raw.types import ReadParticipantDate
+        from pyrogram.errors.exceptions.bad_request_400 import BadRequest
+
+        if client is None:
+            from .myParameters import app
+            client = app
+
+        try:
+            peer = await client.resolve_peer(chatid)
+            while True:
+                try:
+                    r: list[ReadParticipantDate] = await client.invoke(
+                        GetMessageReadParticipants(peer=peer, msg_id=msgid)
+                    )
+                    for i in r:
+                        if str(i.user_id) == target_userid:
+                            return
+                    await sleep(1)
+                except FloodWait as e:
+                    await slm(f"wait_read exception:{e.__class__.__name__}\n{e}\n\nwaiting for FloodWait time")
+                    await sleep(e.value)
+                except Exception as e:
+                    await slm(f"wait_read exception:{e.__class__.__name__}\n{e}\n\nunhandled error. stopped.")
+                    return
+
+        except BadRequest as e:
+            await slm(f"wait_read exception:{e.__class__.__name__}\n{e}"
+                      f"\n\nproceeding to general wait_read chatid: {chatid}  msgid: {msgid}")
+        except Exception as e:
+            await slm(f"wait_read exception:{e.__class__.__name__}\n{e}\n\nunhandled error. stopped.")
+            return
+    else:
+        pass
+
+    from pyrogram.raw.types import UpdateReadChannelOutbox, UpdateReadHistoryOutbox, UpdateReadChannelDiscussionOutbox
+    from .myParameters import myDispatcher
+    from asyncio import Event
+    read_event = Event()
+
+    async def _wait_read(update):
+        if read_event.is_set():
+            return
+        elif isinstance(update, UpdateReadHistoryOutbox):
+            if not (str(update.peer.user_id) == chatid and update.max_id >= msgid):
+                return
+        elif isinstance(update, UpdateReadChannelOutbox):
+            if not (f"-100{update.channel_id}" == chatid and update.max_id >= msgid):
+                return
+        elif isinstance(update, UpdateReadChannelDiscussionOutbox):
+            if not (
+                f"-100{update.channel_id}" == chatid and update.top_msg_id == top_msgid and update.read_max_id >= msgid
+            ):
+                return
+        else:
+            return
+        myDispatcher.remove(_wait_read)
+        read_event.set()  # Set the event upon confirmation
+
+    myDispatcher.add(_wait_read, 0)
+    await read_event.wait()
+
+
+def get_the_cmd(text: str):
+    from .myParameters import PREFIX_SEND_TO
+    prefix = text[0]
+    cmd_txt = text[1:]
+
+    try:
+        cmd_split: list[str] = list(filter(lambda x: len(x) > 0, cmd_txt.split()))
+        options = []
+        for y in cmd_split[1:]:
+            if y.startswith((PC, PREFIX_SEND_TO)):
+                options.append(y[1:].lower())
+            else:
+                break
+        _l = len(options) + 1
+        arg = cmd_txt.split(maxsplit=_l)
+        arg = arg[-1] if len(arg) > _l else ''
+    except ValueError:
+        cmd_split = cmd_txt.split(maxsplit=1)
+        if len(cmd_split) < 2:
+            options = []
+            arg = ''
+        else:
+            options = []
+            arg = cmd_split[1]
+
+    the_cmd = {
+        'prefix': prefix,
+        'cmd': cmd_split[0] if len(cmd_split) > 0 else '',
+        'options': options,
+        'arg': arg
+    }
+
+    return the_cmd

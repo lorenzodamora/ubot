@@ -6,3 +6,4 @@ uvloop
 chardet
 openai
 aiosqlite
+requests

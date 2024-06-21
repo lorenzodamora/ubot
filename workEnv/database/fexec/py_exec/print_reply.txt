@@ -1,0 +1,8 @@
+"""
+print_reply.txt: print vars of message replyed
+"""
+def custom_serializer(obj):
+  if isinstance(obj, client):
+    return str(obj)
+from json import dumps
+p(str(dumps(vars(r), indent=2, default=custom_serializer)))

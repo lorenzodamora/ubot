@@ -145,7 +145,7 @@
         pb = Pushbullet(pushKey)
         pb.push_note("Ubot2", "END TEST")
 
-    # TODO check parametri, rename, add to help, exceptions
+    # TO DO check parametri, rename, add to help, exceptions
     elif check_cmd(cmd_txt, {'test': 2}):
         from pyrogram.raw.functions.messages import GetMessages
         from pyrogram.raw.types import InputMessageID
@@ -425,3 +425,55 @@ EMOJI_MARKUP = '<emoji id={}>{}</emoji>'
 FIXED_WIDTH_DELIMS = [CODE_DELIM, PRE_DELIM]
 
 .venv/Lib/site-packages/pyrogram/parser/markdown.py
+
+
+@Client.on_raw_update(group=1)
+async def raw_update(client: Client, update: Update, __, ___):
+    if isinstance(update, (
+        UpdateReadChannelInbox, UpdateReadChannelOutbox, UpdateReadHistoryInbox, UpdateReadHistoryOutbox
+    )):
+        await slm(client, str(update))
+
+
+
+async def paste_pastebin(code: str, pastename: str):
+    from urllib.parse import quote
+
+    # Define variables with your information
+    dev_key = myClientParameter.PASTEBIN_API_KEY
+    user_key = myClientParameter.PASTEBIN_USER_KEY  # Optional, for guest paste if empty
+    paste_code, paste_name = quote(code), quote(pastename)
+    paste_expire_date = 'N'  # Never
+    paste_private = 1  # 0=public, 1=unlisted, 2=private
+    paste_format = 'python'
+
+    # Build the data dictionary for the POST request
+    data = {
+        'api_option': 'paste',
+        'api_user_key': user_key,
+        'api_paste_private': paste_private,
+        'api_paste_name': paste_name,
+        'api_paste_expire_date': paste_expire_date,
+        'api_paste_format': paste_format,
+        'api_dev_key': dev_key,
+        'api_paste_code': paste_code,
+    }
+
+    # Set the Pastebin API URL
+    url = 'https://pastebin.com/api/api_post.php'
+
+    # Send the POST request using requests library
+    response = requests.post(url, data=data)
+
+    return response.text
+
+def get_version():
+    """strange get ahah"""
+    version = date = "not finded"
+    for line in open("./__init__.py", 'r', encoding='utf-8').readlines():
+        if line.startswith("__version__"):
+            version = line.replace(' ', '').split("=")[1].replace('"', '').strip()
+        elif line.startswith("__date__"):
+            date = line.replace(' ', '').split("=")[1].split('#')[0].replace('"', '').strip()
+
+    return f"my version: {version}\nversion date (italian format): {date}"

@@ -4,18 +4,20 @@ evito di usare i filter per evitare certi strani bug
 """
 from pyrogram import Client
 from pyrogram.types import Message as Msg, Chat, User
+from pyrogram.raw.base import Update
 from pyrogram.enums import ChatType, ParseMode
-from .myParameters import (
-    TERMINAL_ID,
-    PREFIX_COMMAND as PC, PREFIX_SEND_TO as PS,
-    MY_TAG,
-    HELP_PLUS_TEXT,
-)
+from .myParameters import \
+    TERMINAL_ID, MY_TAG, HELP_PLUS_TEXT, PREFIX_COMMAND as PC, PREFIX_SEND_TO as PS, myDispatcher
 from .functions import *
 from asyncio import Lock, sleep
 from .tasker import create_task_name as ctn
 
 request_lock = Lock()
+
+
+@Client.on_raw_update(group=1)
+async def raw_update(_, update: Update, __, ___):
+    myDispatcher.add_event(update)
 
 
 @Client.on_message()
@@ -54,6 +56,8 @@ async def event_handler(client: Client, msg: Msg):
         if incoming and msg.text:
             if msg.text.lower().startswith(MY_TAG.lower() + ' ' + PC):
                 _ = ctn(handle_commands_for_other(client, msg), name=f"other{sec}")
+
+    myDispatcher.add_event(msg)
 
 
 async def handle_commands(c: Client, m: Msg):
@@ -137,7 +141,7 @@ async def handle_commands(c: Client, m: Msg):
                     )
                     await rmsg.edit_text(rmsg.text, entities=rmsg.entities)
                 except Exception as e:
-                    await send_long_msg(c, f"errore in {m.text} {m.chat.id}:{e.__class__.__name__}:\n{e}")
+                    await send_long_msg(f"errore in {m.text} `{m.chat.id}`:{e.__class__.__name__}:\n{e}", client=c)
 
             case 'un attimo':
                 chat_id = m.chat.id
@@ -150,39 +154,48 @@ async def handle_commands(c: Client, m: Msg):
             case 'get msg id':
                 rmsg = m.reply_to_message
                 if rmsg:
-                    await m.edit_text(str(rmsg.id))
+                    if rmsg.message_thread_id:
+                        txt = f"{rmsg.id} top:{rmsg.message_thread_id}"
+                    else:
+                        txt = str(rmsg.id)
+                    await m.edit_text(txt)
                     return
                 try:
                     n_input = int(cmd_txt.split(" ")[1])
                 except (IndexError, ValueError):
                     n_input = 1
+
+                top_id = m.message_thread_id
+                if top_id:
+                    txt = f"this msg id: `{m.id}`  top id: `{top_id}`"
+                else:
+                    txt = f"this msg id: `{m.id}`"
+                await m.edit_text(txt)
+
                 from pyrogram.errors.exceptions.flood_420 import FloodWait
-                await m.edit_text(f"this msg id: `{m.id}`")
                 n_input -= 1
                 chat_id = m.chat.id
 
                 async def _cycle():
                     for _ in range(0, n_input):
-                        uncomplete = True
-                        while uncomplete:
+                        while True:
                             try:
-                                _m = await c.send_message(chat_id=chat_id, text="thisid")
+                                _m = await c.send_message(chat_id=chat_id, message_thread_id=top_id, text="get msg id")
                                 await _m.edit_text(f"this msg id: `{_m.id}`")
-                                uncomplete = False
+                                break
                             except FloodWait as _e:
                                 await sleep(_e.value)
 
-                _ = ctn(_cycle(), f'thisid{m.date.second}')
+                _ = ctn(_cycle(), f'get msg id{m.date.second}')
 
             case 'getall':
                 _del(m)
                 # Crea la directory se non esiste già
-                from os import makedirs
-                from os.path import exists
+                from os import makedirs, path
                 from pprint import PrettyPrinter
                 from .myParameters import GA_FOLD
 
-                if not exists(GA_FOLD):
+                if not path.exists(GA_FOLD):
                     makedirs(GA_FOLD)
 
                 pp = PrettyPrinter(indent=2)
@@ -270,24 +283,23 @@ async def handle_commands(c: Client, m: Msg):
             # region print
             case 'getall print':
                 _del(m)
-                from os.path import exists
-                from os import listdir
+                from os import listdir, path
 
                 async def _internal():
                     from .myParameters import GA_FOLD
                     for file in [f for f in listdir(GA_FOLD)]:
-                        path = f"{GA_FOLD}/{file}"
-                        if not exists(path):
-                            await c.send_message(chat_id=TERMINAL_ID, text=f"il file {path} non esiste")
+                        ga_path = f"{GA_FOLD}/{file}"
+                        if not path.exists(ga_path):
+                            await c.send_message(chat_id=TERMINAL_ID, text=f"il file {ga_path} non esiste")
                             return
-                        _txt = open(path, "r", encoding='utf-8').read()
+                        _txt = open(ga_path, "r", encoding='utf-8').read()
                         _title = f"{file}: \n\n"
                         if _txt == "":
                             _txt = f"{_title}file vuoto"
                         else:
                             _txt = _title + _txt
-                        await send_long_msg(c, _txt, chunk_start="```\n", chunk_end="\n```",
-                                            offset_first_chunk_start=len(_title))
+                        await send_long_msg(_txt, chunk_start="```\n", chunk_end="\n```",
+                                            offset_first_chunk_start=len(_title), client=c)
 
                 await ctn(_internal(), name=f"pga{m.date.second}")
                 await c.send_message(TERMINAL_ID, "end print")
@@ -328,8 +340,8 @@ async def handle_commands(c: Client, m: Msg):
                         _txt = f"{_title}file vuoto"
                     else:
                         _txt = _title + _txt
-                    await send_long_msg(c, _txt, chunk_start="```\n", chunk_end="\n```",
-                                        offset_first_chunk_start=len(_title))
+                    await send_long_msg(_txt, chunk_start="```\n", chunk_end="\n```",
+                                        offset_first_chunk_start=len(_title), client=c)
 
                 async def _internal():
                     if system() == "Windows":
@@ -355,17 +367,27 @@ async def handle_commands(c: Client, m: Msg):
 
             case 'print exec':
                 _del(m)
-                from .myParameters import RESULT_PATH, TRACEBACK_PATH
-                rpath = RESULT_PATH if cmd_txt == 'pr' else TRACEBACK_PATH
+                from .myParameters import EVALCODE_PATH, RESULT_PATH, TRACEBACK_PATH
+                match cmd_txt:
+                    case 'pr':
+                        rpath = RESULT_PATH
+                    case 'pt':
+                        rpath = TRACEBACK_PATH
+                    case 'pc':
+                        rpath = EVALCODE_PATH
+                    case _:
+                        raise ValueError("error in match case of print exec case")
+
+                # rpath = RESULT_PATH if cmd_txt == 'pr' else TRACEBACK_PATH
                 result_txt = open(rpath, "r", encoding='utf-8').read()
-                title = f"{rpath[9:]}: \n\n"
+                title = f"{rpath.split("/")[-1]}: \n\n"
                 if result_txt == "":
                     result_txt = f"{title}file vuoto"
                 else:
                     result_txt = title + result_txt
 
-                await send_long_msg(c, result_txt, chunk_start="```\n", chunk_end="\n```",
-                                    offset_first_chunk_start=len(title))
+                await send_long_msg(result_txt, chunk_start="```\n", chunk_end="\n```",
+                                    offset_first_chunk_start=len(title), client=c)
             # endregion
 
             # region service-cmd
@@ -395,11 +417,13 @@ async def handle_commands(c: Client, m: Msg):
                 _del(m)
                 note = note + ("" if note == "" else '\n') + 'delcmd'
                 try:
-                    _ = ctn(slm(c, f"you send a delcmd\ntxt (prob parsed):\n\n{m.text}\n\nchat id:`{m.chat.id}`"
-                                   f" msg id:`{m.id}`"))
+                    _ = ctn(send_long_msg(
+                        f"you send a delcmd\ntxt (prob parsed):\n\n{m.text}\n\nchat id:`{m.chat.id}` msg id:`{m.id}`",
+                        client=c
+                    ))
                     await _matcher(find, True, note=note)
                 except Exception as e:
-                    await slm(c, f"exception inside delcmd:\n{e}")
+                    await send_long_msg(f"exception inside delcmd:\n{e.__class__.__name__}:\n{e}", client=c)
 
             case 'eval' | 'eval reply':
                 txts = cmd_txt.split(maxsplit=1)
@@ -416,41 +440,50 @@ async def handle_commands(c: Client, m: Msg):
 
             case 'eval file':
                 async def _fexec():
-                    from .myParameters import PY_EXEC_FOLD, RESULT_PATH
-                    _txts = cmd_txt_original.split(maxsplit=1)
-                    if len(_txts) == 1:
-                        await m.edit(f"{PC}{cmd_txt_original}\n!! see `{PC}feval h`")
-                        return
+                    from .myParameters import PY_EXEC_FOLD
                     from .code_runner import python_exec
+                    the_cmd = get_the_cmd(m.text)
+                    opt = the_cmd['options']
+                    arg = the_cmd['arg']
+                    if len(opt) > 1:
+                        await m.edit(f"{m.text}\n!! only one option, see `{PC}feval {PC}h`")
+                        return
 
-                    # if 1 char then command
-                    if len(_txts[1].split(maxsplit=1)[0]) == 1:
-                        if _txts[1] in ['h', '?']:
-                            await m.edit(f"`{PC}feval `(file exec)  parameters:\n\n"
-                                         "`h` / `?` : this help\n\n"
-                                         "[fname] [code] : run code, create file with fname\n"
-                                         "if exist overwrite (min 2 char, one word)\n\n"
-                                         "`f ` [fname] : run selected file\n\n"
-                                         "`l` / `L` : list of files\n"
-                                         'read file comment too (header: """\\n comment\\n""")\n\n'
-                                         "`d `/`r `[Any]: delete file\n\n"
+                    elif len(opt) == 1:
+                        if opt[0] in ['h', '?'] and arg == '':
+                            await m.edit(f"`{PC}feval `(file exec)  options with prefix {PC}:\n\n"
+                                         "`h` / `?` : this help menù\n\n"
+                                         "[fname] [code] : create file with fname and run code\n"
+                                         "if exist overwrite. by default it add final '.txt'\n"
+                                         "requirements: min 2 char; max one word\n\n"
+                                         "`f `/ `r ` [fname] : run selected file\n"
+                                         "don't include final '.txt'\n\n"
+                                         "`L` : list of files\n"
+                                         'read file comment too\n'
+                                         'comment requirement: header: """\\n comment\\n""")\n\n'
+                                         '`s` [fname]: see file\n\n'
+                                         "`d ` [fname]: delete file\n\n"
                                          f"`{PC}eval ?` : see pre_exec")
                             return
 
-                        elif _txts[1].startswith('f'):
-                            _txts = _txts[1].split(maxsplit=2)
-                            if len(_txts) != 2:
-                                await m.edit(f"per `{PC}feval f ` bisogna mettere il fileName")
+                        elif opt[0] in ['f', 'F', 'r', 'R']:
+                            if arg == '':
+                                # await m.edit(f"per `{the_cmd['prefix']}{the_cmd['cmd']} {PC}{opt[0]} ` "
+                                await m.edit(f"per `{m.text} ` "
+                                             f"bisogna mettere il fileName")
                                 return
                             from os.path import exists
-                            fpath = f"{PY_EXEC_FOLD}/{_txts[1]}"
+                            fpath = f"{PY_EXEC_FOLD}/{arg}.txt"
                             if not exists(fpath):
-                                await m.edit(f"`{PC}{cmd_txt_original}`\nil file {_txts[1]} non esiste")
+                                await m.edit(f"`{m.text}`\nil file {arg} non esiste")
                                 return
                             m.text = f"{PC}eval " + open(fpath, 'r', encoding='utf-8').read()
-                            await python_exec(c, m)
+                            try:
+                                await python_exec(c, m)
+                            except ValueError as ve:
+                                await m.edit(f"`{PC}{cmd_txt_original}`\n{ve.__class__.__name__}: {ve}")
 
-                        elif _txts[1] in ['l', 'L']:
+                        elif opt[0] in ['l', 'L'] and arg == '':
                             from os import listdir
                             file_list = listdir(PY_EXEC_FOLD)
                             result = ""
@@ -459,9 +492,9 @@ async def handle_commands(c: Client, m: Msg):
                                 is_note = False
 
                                 fstream = open(f"{PY_EXEC_FOLD}/{file_name}", 'r', encoding='utf-8')
-                                next(fstream)
+                                next(fstream)  # skip first line with opening """
                                 for line_number, line in enumerate(fstream, start=1):
-                                    if line.startswith('"""'):
+                                    if line.startswith('"""'):  # if finded closing """ break
                                         is_note = True
                                         break
                                     elif line_number == 6:
@@ -478,36 +511,59 @@ async def handle_commands(c: Client, m: Msg):
                             try:
                                 await m.edit_text(result)
                             except MessageTooLong:
-                                open(RESULT_PATH, 'w', encoding='utf-8').write(result)
-                                await m.edit_text(f"file eval list: view {RESULT_PATH} or print with `{PC}pr")
+                                # open(RESULT_PATH, 'w', encoding='utf-8').write(result)
+                                # await m.edit_text(f"file eval list: view {RESULT_PATH} or print with `{PC}pr")
+                                await m.edit_text(f"file eval list: except MessageTooLong")
+                                await send_long_msg(result)
 
-                        elif _txts[1].startswith(('d', 'r')):
-                            _txts = _txts[1].split(maxsplit=2)
-                            if len(_txts) != 2:
-                                await m.edit(f"per `{PC}feval d ` bisogna mettere il fileName")
+                        elif opt[0] in ['s', 'S']:
+                            if arg == '':
+                                # await m.edit(f"per `{the_cmd['prefix']}{the_cmd['cmd']} {PC}{opt[0]} ` "
+                                await m.edit(f"per `{m.text} ` "
+                                             f"bisogna mettere il fileName")
                                 return
                             from os.path import exists
-                            fpath = f"{PY_EXEC_FOLD}/{_txts[1]}"
+                            fpath = f"{PY_EXEC_FOLD}/{arg}.txt"
                             if not exists(fpath):
-                                await m.edit(f"il file {_txts[1]} non esiste")
+                                await m.edit(f"`{m.text}`\nil file {arg} non esiste")
+                                return
+
+                            _del(m)
+                            _title = f"{arg}: \n\n"
+                            await send_long_msg(_title + open(fpath, 'r', encoding='utf-8').read(),
+                                                chunk_start="```\n", chunk_end="\n```",
+                                                offset_first_chunk_start=len(_title), client=c)
+
+                        elif opt[0] in ['d', 'D']:
+                            if arg == '':
+                                await m.edit(f"per `{m.text} ` bisogna mettere il fileName")
+                                return
+                            from os.path import exists
+                            fpath = f"{PY_EXEC_FOLD}/{arg}.txt"
+                            if not exists(fpath):
+                                await m.edit(f"il file {arg} non esiste")
                                 return
                             from os import remove
                             remove(fpath)
-                            await m.edit(f"`{PC}{cmd_txt_original}`\n!! file deleted !!")
+                            await m.edit(f"`{m.text}`\n!! file deleted !!")
 
                         else:
-                            await m.edit(f"`{PC}{cmd_txt_original}`\n!! command not found !!")
+                            await m.edit(f"`{m.text}`\n!! command not found !! see `{PC}feval {PC}h`")
                             return
 
-                    else:
-                        fcrea = _txts[1].split(maxsplit=1)
+                    elif arg != '':
+                        fcrea: list[str] = arg.split(maxsplit=1)
                         if len(fcrea) == 1:
-                            await m.edit(f"`{m.text}`\n!! see `{PC}feval h`")
+                            await m.edit(f"`{m.text}`\n!! see `{PC}feval {PC}h`")
                             return
-                        fpath = f"{PY_EXEC_FOLD}/{fcrea[0]}"
-                        open(fpath, 'w', encoding='utf-8').write(fcrea[1])
+                        fpath = f"{PY_EXEC_FOLD}/{fcrea[0]}.txt"
+                        open(fpath, 'w', encoding='utf-8').write(fcrea[1].strip())
                         m.text = f"{PC}eval " + open(fpath, 'r', encoding='utf-8').read()
                         await python_exec(c, m)
+
+                    else:
+                        await m.edit(f"{PC}{cmd_txt_original}\n!! see `{PC}feval {PC}h`")
+                        return
 
                 task = ctn(_fexec(), f'exec file{m.date.second}')
                 await eval_canc(c, m, task)
@@ -544,6 +600,12 @@ async def handle_commands(c: Client, m: Msg):
 
             case 'ping':  # or pingt
                 await pong_(c, m, cmd_txt != "ping")
+
+            case 'target':
+                _del(m)
+                from .myParameters import set_target
+                set_target(m.chat.id)
+                await c.send_message(TERMINAL_ID, f"'target' var set to {m.chat.id}")
 
             case 'version':
                 _del(m)
@@ -589,14 +651,21 @@ async def handle_send_to(c: Client, m: Msg):
     cmd_txt_original = m.text[1:]
     cmd_txt = cmd_txt_original.lower()
     c_id = m.chat.id
+    r = m.reply_to_message if m.reply_to_message else None
+
+    if r is None:
+        await c.send_message(TERMINAL_ID, f"`{m.text}`\nnessun reply per i comandi 'send to'")
+        return
 
     # ">." iniziali fanno in modo che venga scritto > senza comando
     if cmd_txt != "" and cmd_txt[0] == ".":
-        await m.edit_text(PC + cmd_txt_original[1:])
+        await m.edit_text(PS + cmd_txt_original[1:])
         return
 
+    the_cmd = get_the_cmd(m.text)
+
     async def _matcher(cmd_match, is_del: bool = False):
-        nonlocal m, c, cmd_txt_original, cmd_txt
+        nonlocal m, c, cmd_txt_original, cmd_txt, the_cmd
 
         def _del(_m: Msg):
             if not is_del:
@@ -605,36 +674,28 @@ async def handle_send_to(c: Client, m: Msg):
         match cmd_match:
             case 'pic':
                 _del(m)
-                if not m.reply_to_message:
-                    await c.send_message(TERMINAL_ID, f"nessun reply per il comando {PS}pic")
-                    return
-                from .pyrogram_forward_to_topic import forward_to_topic as for_top
                 from .myParameters import SAVED_MESSAGE_FORUM_ID, PIC_TOPIC_ID
-                await for_top(source_channel_id=c_id,
-                              destination_channel_id=SAVED_MESSAGE_FORUM_ID,
-                              forwarded_message_id=m.reply_to_message_id,
-                              topic_init_message_id=PIC_TOPIC_ID,
-                              client=c)
+                """
+                return {
+                    'c_id': SAVED_MESSAGE_FORUM_ID,
+                    'thread_id': PIC_TOPIC_ID
+                }
+                """
+                # return ['forum', SAVED_MESSAGE_FORUM_ID, PIC_TOPIC_ID]
+                return [SAVED_MESSAGE_FORUM_ID, PIC_TOPIC_ID]
 
             case 'save':
                 _del(m)
-                if not m.reply_to_message:
-                    await c.send_message(TERMINAL_ID, f"nessun reply per il comando {PS}save")
-                    return
-                await c.forward_messages('me', m.chat.id, m.reply_to_message_id)
+                return ['me', None]
 
             case 'second profile':
                 _del(m)
                 from .myParameters import MY_ID2
-                await c.forward_messages(MY_ID2, c_id, m.reply_to_message_id)
+                return [MY_ID2, None]
 
-            # TODO parametri, copy or forward, ???
             case 'terminal':
                 _del(m)
-                if not m.reply_to_message:
-                    await c.send_message(TERMINAL_ID, f"nessun reply per il comando {PS}terminal")
-                    return
-                await c.forward_messages(TERMINAL_ID, c_id, m.reply_to_message_id)
+                return [TERMINAL_ID, None]
 
             case _:
                 _del(m)
@@ -642,8 +703,57 @@ async def handle_send_to(c: Client, m: Msg):
                     TERMINAL_ID,
                     f"! cmd don't found !\n{m.text}\nchat:{c_id if c_id != TERMINAL_ID else 'this chat'}"
                 )
+                return None
 
-    await _matcher(finder_cmd(cmd_txt))
+    target = await _matcher(finder_cmd(cmd_txt))
+    if target is None:
+        return
+
+    grouped_id = r.media_group_id
+    # r_id = m.reply_to_message_id
+    r_id = r.id
+
+    if grouped_id is not None and any((option in ['group', 'g', 'album', 'a']) for option in the_cmd['options']):
+        # _ids = list(range(r_id - 9, r_id + 10))
+        _ids = [i for i in range(r_id - 9, r_id + 9 + 1) if i > 0]
+
+        from pyrogram.errors.exceptions.bad_request_400 import MessageIdsEmpty
+        try:
+            _msgs = await c.get_messages(c_id, _ids)
+
+        except MessageIdsEmpty:  # last msg id < r_id + 10
+            _msgs = await c.get_messages(c_id, [i for i in range(r_id - 9, r_id + 1) if i > 0])
+            if not isinstance(_msgs, list):
+                _msgs = [_msgs]
+
+            for i in range(r_id + 1, r_id + 8 + 1):
+                try:
+                    _msgs.append(await c.get_messages(c_id, i))
+                except MessageIdsEmpty:
+                    break
+
+        # ids, msgs = [], []
+        ids = []
+        for msg in _msgs:
+            _grouped_id = getattr(msg, 'media_group_id', None)
+            if _grouped_id is not None and _grouped_id == grouped_id:
+                ids.append(msg.id)
+                # msgs.append(msg)
+    else:
+        ids = [r_id]
+        # msgs = [r]
+
+    if any((option in ['copy', 'c']) for option in the_cmd['options']):
+        # for msg in msgs:
+        # await msg.copy(chat_id=target[0], message_thread_id=target[1])
+        copy = True
+
+    else:  # forward
+        # await c.forward_messages(chat_id=target[0], message_thread_id=target[1], from_chat_id=c_id, message_ids=ids)
+        copy = False
+
+    await c.forward_messages(chat_id=target[0], message_thread_id=target[1],
+                             from_chat_id=c_id, message_ids=ids, hide_sender_name=copy)
 
 
 async def handle_commands_for_other(c: Client, m: Msg):

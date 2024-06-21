@@ -1,8 +1,5 @@
-from pyrogram import Client, idle
-
 # crea accanto a mMain.py il file myClientParameter.py con dentro queste tre variabili, io l'ho messo in .gitignore
-from myClientParameter import t_id, t_hash, t_phone, pushbullet_API_KEY as pushKey, OPENAI_API_KEY
-from myplugins.myParameters import TERMINAL_ID as TID
+from myClientParameter import t_id, t_hash, t_phone, pushbullet_API_KEY as pushKey  # , OPENAI_API_KEY
 from pushbullet import Pushbullet
 
 '''
@@ -17,15 +14,17 @@ title = "Ubot1"
 
 
 async def main(dev=False):
-    from os import environ
+    from pyrogram import Client, idle
+
+    # from os import environ
     if dev:
-        environ['dev'] = '1'
+        # environ['dev'] = '1'
         _title = "dev"
     else:
-        environ['dev'] = '0'
+        # environ['dev'] = '0'
         _title = title
 
-    environ['OPENAI_API_KEY'] = OPENAI_API_KEY
+    # environ['OPENAI_API_KEY'] = OPENAI_API_KEY
 
     app = Client(
         name=_title,
@@ -36,26 +35,35 @@ async def main(dev=False):
     )
 
     await app.start()
+    from myplugins.myParameters import TERMINAL_ID as TID, set_client, myDispatcher
+
+    await myDispatcher.start()
+    set_client(app)  # make global the client variable
     await app.send_message(chat_id=TID, text="dev Ready" if dev else "Ready")
 
-    if not dev:
-        pb.push_note(title, "Ready")
-    else:
+    if dev:
         print("READY")
+    else:
+        pb.push_note(title, "Ready")
     await idle()
 
-    if not dev:
-        pb.push_note(title, "Stop")
-    else:
-        print("Stop")
+    # TODO @workEnv2/myplugins/dispatcher.py:9
+
     await app.send_message(chat_id=TID, text="dev Stop" if dev else "Stop")
+    await myDispatcher.stop()
+    # TODO scrivere i processi che stanno aspettando o lavorando per chiudere
+    await app.stop(False)
+    if dev:
+        print("Stop")
+    else:
+        pb.push_note(title, "Stop")
 
 
 if __name__ == "__main__":
-    from sys import argv, exit
+    from sys import argv, exit, stderr
 
     if len(argv) > 2:
-        print("Usage: python3 -u mMain.py [<parameter>]")
+        print("Usage: python3 -u mMain.py [<parameter>]", file=stderr)
         exit(1)
     parameter = False
     if len(argv) == 2:
@@ -63,7 +71,7 @@ if __name__ == "__main__":
             parameter = True
             print('dev on')
         else:
-            print("parameters:\n\t[no parameter]\n\tdev")
+            print("parameters:\n\t[no parameter]\n\tdev", file=stderr)
             exit(1)
 
     from platform import python_version_tuple, system

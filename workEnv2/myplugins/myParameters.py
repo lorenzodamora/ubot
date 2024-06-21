@@ -1,6 +1,27 @@
 """
 parametri globali
 """
+from .dispatcher import Dispatcher
+
+__all__ = (
+    "d", "TID", "target", "MY_ID", "MY_ID2", "MY_TAG", "MY_TAG2",
+    "myDispatcher", "TERMINAL_ID",
+)
+
+
+def set_client(client_):
+    global app
+    app = client_
+
+
+def set_target(target_):
+    global target
+    target = target_
+
+
+app = None
+myDispatcher: Dispatcher = Dispatcher()
+d = myDispatcher
 BOTLIST = {
     'Ubot1': {
         # linux, windows
@@ -22,7 +43,8 @@ BOTLIST = {
 }
 MY_ID2, MY_ID = 649363031, 1259233812
 MY_TAG2, MY_TAG = '@Ill_Magnus', '@ill_lore'
-TERMINAL_ID = -1001995530063
+TID = TERMINAL_ID = -1001995530063
+target = TERMINAL_ID
 SAVED_MESSAGE_FORUM_ID, PIC_TOPIC_ID = -1001971247646, 18  # Forum: Saved Message > Topic:Pic
 PREFIX_COMMAND, PREFIX_SEND_TO = ',', '^'
 WELCOME_MSG, WELCOME_MSG1 = "Ti ringrazio di avermi contattato, ti risponderò appena possibile.", (
@@ -115,16 +137,25 @@ ASCII_ART = {
         "..................\u2580\u258c\u2592\u2580\u2592\u2590\u2580",
     'null': ''
 }
-RESULT_PATH, TRACEBACK_PATH, PY_EXEC_FOLD, GA_FOLD = (
-    'database/result.txt', 'database/traceback.txt', 'database/py_exec', 'database/ga'
+EVALCODE_PATH, RESULT_PATH, TRACEBACK_PATH, PY_EXEC_FOLD, GA_FOLD = (
+    'database/fexec/evalcode.txt', 'database/fexec/result.txt', 'database/fexec/traceback.txt',
+    'database/fexec/py_exec', 'database/ga'
 )
 SOURCE_CODE_LINK = "https://github.com/lorenzodamora/ubot/"
 HELP_PLUS_TEXT = (
     f"Il prefix è '`{PREFIX_COMMAND}`'\ni comandi '`{PREFIX_SEND_TO}`' sono \"send to\"\n"
     f"i comandi `{PREFIX_COMMAND}.` e `{PREFIX_SEND_TO}.` ignorano il comando (e cancellano il punto)\n\n"
+    f"i 'send to' hanno le opzioni:\n"
+    f"    album / a / group / g : se è un album di media allora lo inoltra tutto\n"
+    f"    copy / c : inoltra senza sender name\n"
+    f"  e si usano come da esempio: `{PREFIX_SEND_TO}t {PREFIX_COMMAND}a {PREFIX_COMMAND}c`\n\n"
     f"Others Commands:\n\n"
     f"Il prefix è `{MY_TAG} {PREFIX_COMMAND}`\n"
-    "Richieste: una ogni 20 sec, esclusa esecuzione, tutte in coda (in teoria)"
+    "Richieste: una ogni 20 sec, esclusa esecuzione, tutte in coda (in teoria)\n\n"
+    "myDispatcher logic:\n"
+    "in ,eval puoi fare d.add(Callable, lifetime), in cui sono dispacciati tutti i raw.Update e i pyro-Message\n"
+    "la Callable è così composta: def func(update)\n"
+    "può essere sia def che async def, il parametro che viene passato sono tutti gli update e tutti i pyro-message"
 )
 COMMANDS = {
     '?': {
@@ -274,7 +305,7 @@ COMMANDS = {
     },
     'pic': {
         'alias': ['p', 'pic'],
-        'type': 1,
+        'type': 2,
         'note': "forward reply to pic topic",
         'group': "send to"
     },
@@ -298,14 +329,14 @@ COMMANDS = {
         'other': True
     },
     'print exec': {
-        'alias': ['pr', 'pt'],
+        'alias': ['pr', 'pt', 'pc'],
         'type': 1,
-        'note': "print result or traceback (of exec)",
+        'note': "print evaluate code, or his result or traceback (of exec)",
         'group': "print"
     },
     'save': {
         'alias': ['save', 's'],
-        'type': 1,
+        'type': 2,
         'note': "forward reply to saved",
         'group': "send to"
     },
@@ -323,7 +354,7 @@ COMMANDS = {
     },
     'second profile': {
         'alias': ['2'],
-        'type': 1,
+        'type': 2,
         'note': "forward reply to second profile",
         'group': "send to"
     },
@@ -340,9 +371,15 @@ COMMANDS = {
         'note': "strikethrough the replyed message",
         'group': "fast"
     },
+    'target': {
+        'alias': ['here', 'target'],
+        'type': 1,
+        'note': "for eval, set 'target' var to this chat",
+        'group': "service-cmd"
+    },
     'terminal': {
         'alias': ['t', 'terminal'],
-        'type': 1,
+        'type': 2,
         'note': "forward reply to terminal",
         'group': "send to"
     },
@@ -353,7 +390,7 @@ COMMANDS = {
         'group': "fast"
     },
     'version': {
-        'alias': ['version', '-v'],
+        'alias': ['version', '-v', 'vv', 'vd'],
         'type': 1,
         'note': "edit msg with version and date of ubot",
         'group': "service-cmd",

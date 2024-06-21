@@ -1,3 +1,4 @@
+from sys import argv, exit, executable, stderr
 import asyncio
 from signal import SIGINT, signal
 from datetime import datetime
@@ -27,8 +28,8 @@ async def print_line(line):
     async with print_time_lock:
         p_time = print_time
     if p_time:
-        t = datetime.now().replace(microsecond=0)
-        print(f"time: {t}")
+        _t = datetime.now().replace(microsecond=0)
+        print(f"time: {_t}")
         async with print_time_lock:
             print_time = False
 
@@ -45,7 +46,6 @@ async def handle_sigint(process):
 
 
 async def main(args: list[str]):
-    from sys import executable
     # Run your async subprocess
     process = await asyncio.create_subprocess_exec(
         executable,
@@ -54,10 +54,10 @@ async def main(args: list[str]):
         stderr=asyncio.subprocess.PIPE,
     )
 
-    _ = asyncio.create_task(set_print_time())
-
     # Register signal handler for SIGINT (Ctrl+C)
     signal(SIGINT, lambda sig, frame: asyncio.create_task(handle_sigint(process)))
+
+    _ = asyncio.create_task(set_print_time(), name="set_print_time() of main.py")
 
     # Start reading stdout and stderr concurrently
     await asyncio.gather(
@@ -70,9 +70,8 @@ async def main(args: list[str]):
 
 
 if __name__ == "__main__":
-    from sys import argv, exit
     if len(argv) not in [2, 3]:
-        print("Usage: python3 -u main.py [<script.py>] [<?parameter>]")
+        print("Usage: python3 -u main.py [<script.py>] [<?parameter>]", file=stderr)
         exit(1)
     parameter = [argv[1]]
 
@@ -80,7 +79,7 @@ if __name__ == "__main__":
         if argv[2] == "dev":
             parameter.append('dev')
         else:
-            print("parameters:\n\t[no parameter]\n\tdev")
+            print("parameters:\n\t[no parameter]\n\tdev", file=stderr)
             exit(1)
 
     from platform import python_version_tuple, system

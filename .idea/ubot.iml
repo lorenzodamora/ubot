@@ -8,9 +8,8 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="Kurimuzon-Userbot-master" />
     <orderEntry type="module" module-name="stepsbot" />
-    <orderEntry type="module" module-name="infobot" />
     <orderEntry type="module" module-name="ubot-tg-py-master" />
     <orderEntry type="module" module-name="meteoATbot" />
-    <orderEntry type="module" module-name="mazzoBot" />
+    <orderEntry type="module" module-name="Kurimuzon-Userbot" />
   </component>
 </module>

@@ -6,7 +6,7 @@ def read_all_my_tasks(print_=True):
     ret = ""
     for task in tasks:
         n = task.get_name()
-        if not n.startswith("Task"):
+        if not n.startswith(("Task", "handler_worker_")):
             ret += n + "\n"
     if print_:
         print(f"all my tasks:\n{ret[:-1]}")
