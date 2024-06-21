@@ -273,8 +273,8 @@ async def paste_githubgist(codes: list[str], pastenames: list[str], gist_id: str
     :return:
     """
     gist_api_url = "https://api.github.com/gists"
-    from . import myClientParameter
-    api_token = myClientParameter.GIST_TOKEN
+    from . import GIST_TOKEN
+    api_token = GIST_TOKEN
 
     headers = {
         'Authorization': 'token %s' % api_token
