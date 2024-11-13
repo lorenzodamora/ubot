@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 pt = datetime.strptime
 
 target = -1002124404943
-n_h = 2  # ore di differenza
+# n_h = 2  # ore di differenza
 date_fmt = "%d/%m/%Y %H:%M"
 
 date_str = r.text  # "11/05/2024 04:44"
@@ -20,6 +20,6 @@ except:
   print("Incorrect data format, should be DD/MM/YYYY HH:MM")
   raise
 
-dr -= timedelta(hours=n_h)
+# dr -= timedelta(hours=n_h)
 
 await r.forward(target, schedule_date=dr)

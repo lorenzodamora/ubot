@@ -1,2 +1,2 @@
-__version__ = "v2.1.1"
-__date__ = "21/06/2024"  # italian format
+__version__ = "v2.1.2"
+__date__ = "13/11/2024"  # italian format

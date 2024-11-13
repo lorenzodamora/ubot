@@ -1,0 +1,86 @@
+"""
+cerca tutti i messaggi inoltrati dallo stesso canale, ha bisogno in risposta id canale
+"""
+import csv
+from pathlib import Path
+
+picid = -1002124404943
+# pictag = "reload_anime_pics"
+
+picfile = Path('database/forward_pics_index.csv')
+
+# check exists or create
+
+if not picfile.exists():
+ picfile.open('w').write("msg id;forward chat id;forward msg id\n0;;\n")
+ print("File creato e righe scritte.")
+else:
+ print("Il file esiste già.")
+
+# read file
+
+lastmid = 0
+async for _msg in c.get_chat_history(picid):
+ lastmid = _msg.id
+ break
+
+with picfile.open('r') as file:
+ reader = csv.reader(file, delimiter=';')
+ rows = list(reader)
+
+if rows:
+ last_row = rows[-1]
+ lastid = last_row[0]
+else:
+ p("file with no row")
+ return
+
+# check update and update file
+
+if lastid == str(lastmid):
+ print(f"Il primo elemento dell'ultima riga è già {lastmid}")
+
+else:
+ print("mancano righe.")
+
+ # end = lastmid
+ start = 0
+ try:
+  start = int(lastid)
+
+ except ValueError:
+  print(f"errore nel file, lastid:{lastid} dovrebbe essere un numero intero")
+  return
+
+ ofile = picfile.open('a')
+ from asyncio import sleep 
+ for _n in range(start+1, lastmid + 1):
+  _msg = await c.get_messages(picid, _n)
+  await sleep(3)
+ # _msgid = _n
+  _n2 = getattr(_msg, 'forward_from_chat', '').id if _msg.forward_from_chat else ''
+  _n3 = getattr(_msg, 'forward_from_message_id', '')
+
+  ofile.write(f"{_n};{_n2};{_n3}\n")
+
+ ofile.close()
+
+# search
+
+ofile = picfile.open('r')
+reader = csv.reader(ofile, delimiter=';')
+_res = ""
+for row in reader:
+ if r.text in row[1]:
+  i0 = row[0]
+  i1 = row[1]
+  i2 = row[2]
+  _res += f"t.me/{str(picid).replace('-100', 'c/')}/{i0} : t.me/{str(i1).replace('-100', 'c/')}/{i2}\n"
+ofile.close()
+
+_rows = _res.strip().split('\n')
+_sorted = sorted(_rows, key=lambda row: row.split('/')[-1])
+
+_res2 = '\n'.join(_sorted)
+await slm(_res if _res != "" else "no found")
+await slm("sorted:\n\n" + (_res2 if _res2 != "" else "no found"))

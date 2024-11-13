@@ -1,7 +1,7 @@
 """
 import.txt: see the imports of pre_exec
 """
-with open("plugins/code_runner.py", "r", encoding="utf-8") as file:
+with open("myplugins/code_runner.py", "r", encoding="utf-8") as file:
  for line_number, line in enumerate(file):
    print(line, end="")
    if line_number == 20:
