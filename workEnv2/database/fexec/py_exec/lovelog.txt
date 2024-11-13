@@ -1,0 +1,33 @@
+"""
+manda nel canale shiro e neko lo status on e off
+"""
+if r:
+ await r.download("./myplugins/lovelog.py")
+ import importlib
+ # Carica dinamicamente lovelog.py
+ lovelog = importlib.import_module('myplugins.lovelog')
+ UserStatusLogger = lovelog.UserStatusLogger
+else:
+ from .lovelog import UserStatusLogger
+
+# exec(open('./database/lovelog.py', 'r', encoding='utf-8').read())
+
+from pyrogram.raw.types import UpdateUserStatus
+
+yuno = 6404711861
+ill = [MY_ID2, MY_ID]
+
+shiro_logger = await UserStatusLogger.create(yuno, "Shiro", False)
+neko_logger = await UserStatusLogger.create(ill, "Neko", True)
+
+async def _lovelog(_raw):
+
+ if not isinstance(_raw, UpdateUserStatus):
+  return
+
+ if _raw.user_id == yuno:
+  await shiro_logger.update_status(_raw)
+ elif _raw.user_id in ill:
+  await neko_logger.update_status(_raw)
+
+d.add(_lovelog, 0)

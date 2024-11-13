@@ -13,31 +13,40 @@ c = None
 
 
 class UserStatusLogger:
-    def __init__(self, user_id, name, utype: bool):
+    def __new__(cls, user_id, name, utype: bool):
         """utype True è array di id, False è singolo elemento"""
-        self.user_id = user_id
-        self.utype = utype
-        self.name = name
-        self.sstr = f"a {self.name}'s list of log:"
+        instance = super().__new__(cls)
+        instance.user_id = user_id
+        instance.utype = utype
+        instance.name = name
+        # self.sstr = f"a {self.name}'s list of log:"
+        instance.sstr = f"a {instance.name}'s list of log:"
         # self.wait_exp = asyncio.create_task(asyncio.sleep(0))
-        self.wait_exp = None
-        self.lock = asyncio.Lock()
-        self.ad = {
+        instance.wait_exp = None
+        instance.lock = asyncio.Lock()
+        instance.ad = {
             0: None,
             1: False,
             2: None,
             3: None
         }
         "dati asincroni, last_msg, is_on, msg_list, last_offtime_timestamp"
-        fut = asyncio.get_event_loop().run_in_executor(None, lambda: asyncio.run(self.a_init()))
-        _ = fut.result()
+        return instance
+        # fut = asyncio.get_event_loop().run_in_executor(None, lambda: asyncio.ensure_future(self.a_init()))
+        # _ = fut.result()
 
-    async def a_init(self):
+    @classmethod
+    async def create(cls, user_id, name, utype: bool):
+        """Factory asincrona per inizializzare l'oggetto."""
+        # Crea l'istanza
+        instance = cls(user_id, name, utype)
+
         global c
         if not c:
             from .myParameters import app
             c = app
-        self.ad[2] = await c.send_message(chlog, self.sstr)
+        instance.ad[2] = await c.send_message(chlog, instance.sstr)
+        return instance
 
     async def rld(self, i):
         """read locked data"""
